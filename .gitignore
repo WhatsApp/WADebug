@@ -1,0 +1,14 @@
+*.pyc
+
+dist/
+build/
+*.egg-info/
+
+.tox/
+.coverage
+
+.pytest_cache/
+wadebug_logs/
+wadebug_logs.zip
+
+**/wadebug.conf.yml

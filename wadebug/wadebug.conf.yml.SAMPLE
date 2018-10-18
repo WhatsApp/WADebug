@@ -1,0 +1,10 @@
+# configurations related to the MySQL database
+db:
+  # hostname of the MySQL database
+  host: # for example, "0.0.0.0"
+  # host port that the MySQL database uses, normally it would be 3306
+  port: # for example, 3306
+  # username to connect to the MySQL database
+  user: # for example, "root"
+  # password of the username that is used to connect to the MySQL database
+  password: # for example, "your_database_password"

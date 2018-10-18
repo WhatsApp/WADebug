@@ -1,0 +1,2 @@
+# read dependencies from setup.py file
+-e .
