@@ -22,13 +22,14 @@ dependencies = [
 
 setup(
     name='wadebug',
+    long_description=open('README.md', 'r').read(),
+    long_description_content_type='text/markdown',
     version='0.1.0',
     url='https://developers.facebook.com/docs/whatsapp/guides/wadebug',
     license='MIT',
     author='Thiago Moraes',
     author_email='tmoraes@fb.com',
     description='Investigate issues with WhatsApp Business API setup.',
-    long_description=__doc__,
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
     zip_safe=False,
