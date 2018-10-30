@@ -22,3 +22,8 @@ class FBNetworkError(Error):
 class LogsNotCompleteError(Error):
     """Raised when at least one log file could not be retrieved"""
     pass
+
+
+class InvalidParamType(Error):
+    """Raised when trying to use an invalid param_type for a cli_param.ReusableParam"""
+    pass

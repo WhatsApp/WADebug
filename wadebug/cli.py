@@ -11,6 +11,7 @@ from wadebug import results
 from wadebug import ui
 from wadebug import wa_actions
 from wadebug import cli_utils
+from wadebug.cli_param import wadebug_option, ReusableParam
 
 import json
 import os
@@ -39,25 +40,25 @@ def safe_main():
         )
 
 
-@click.group(invoke_without_command=True)
-@click.pass_context
-@click.option(
+opt_out = ReusableParam(
+    '--do-not-send-usage',
+    'opt_out',
+    help='Pass this flag to opt out from sending usage to WhatsApp. Sending '
+         'usage to WhatsApp could accelerate Direct Support ticket resolve time.',
+    is_flag=True,
+    default=False,
+)
+
+json_output = ReusableParam(
     '--json',
-    'json_output',
+    'json',
     help='Pass this flag to output results in json format. This enables '
     'automation and integration with other applications if needed.',
     is_flag=True,
     default=False,
 )
-@click.option(
-    '--do-not-send-usage',
-    'opt_out',
-    help='Pass this flag to opt out from sending usage to WhatsApp. Sending '
-    'usage to WhatsApp could accelerate Direct Support ticket resolve time.',
-    is_flag=True,
-    default=False,
-)
-@click.option(
+
+send_logs = ReusableParam(
     '--send-logs',
     'send_logs',
     help='Pass this flag to send WhatsApp Business API container logs '
@@ -65,6 +66,10 @@ def safe_main():
     is_flag=True,
     default=False,
 )
+
+
+@click.group(invoke_without_command=True)
+@click.pass_context
 @click.option(
     '--version',
     'version',
@@ -72,7 +77,10 @@ def safe_main():
     is_flag=True,
     default=False,
 )
-def main(ctx, json_output, opt_out, send_logs, version):
+@wadebug_option(opt_out)
+@wadebug_option(json_output)
+@wadebug_option(send_logs)
+def main(ctx, version, **kwargs):
     """Investigate issues with WhatsApp Business API setup."""
 
     # Program entry point. When no arguments, executes full_debug.
@@ -86,28 +94,17 @@ def main(ctx, json_output, opt_out, send_logs, version):
         )
         sys.exit(0)
 
-    ctx.obj = {}
-
-    ctx.obj['JSON'] = json_output
-    ctx.obj['OPT_OUT'] = opt_out
-    ctx.obj['SEND_LOGS'] = send_logs
     if ctx.invoked_subcommand is None:
         ctx.invoke(full_debug)
 
 
 @main.command()
 @click.pass_context
-@click.option(
-    '--json',
-    'json_output',
-    help='Outputs json to allow consumption by other applications.',
-    is_flag=True,
-    default=False,
-)
-def ls(ctx, json_output):
+@wadebug_option(json_output)
+def ls(ctx, **kwargs):
     """Print a list of possible debug actions."""
     acts = wa_actions.get_all_actions()
-    if should_print_json(ctx, json_output):
+    if ctx.obj.get('json', False):
         click.echo(
             json.dumps({
                 'actions': [act.user_facing_name for act in acts]
@@ -123,80 +120,38 @@ def ls(ctx, json_output):
 
 @main.command('full')
 @click.pass_context
-@click.option(
-    '--json',
-    'json_output',
-    help='Pass this flag to output results in json format. This enables '
-    'automation and integration with other applications if needed.',
-    is_flag=True,
-    default=False,
-)
-@click.option(
-    '--do-not-send-usage',
-    'opt_out',
-    help='Pass this flag to opt out from sending usage to WhatsApp. Sending '
-    'usage to WhatsApp could accelerate Direct Support ticket resolve time.',
-    is_flag=True,
-    default=False,
-)
-@click.option(
-    '--send-logs',
-    'send_logs',
-    help='Pass this flag to send WhatsApp Business API container logs '
-    'to WhatsApp. Not available in json mode.',
-    is_flag=True,
-    default=False,
-)
-def full_debug(ctx, json_output, opt_out, send_logs):
+@wadebug_option(opt_out)
+@wadebug_option(json_output)
+@wadebug_option(send_logs)
+def full_debug(ctx, **kwargs):
     """Execute all debug routines, executed by default."""
     acts = wa_actions.get_all_actions()
 
     debug_implementation(
         acts,
-        json_output=should_print_json(ctx, json_output),
-        opt_out=should_opt_out(ctx, opt_out),
-        send_logs=should_send_logs(ctx, send_logs),
+        json_output=ctx.obj.get('json', False),
+        opt_out=ctx.obj.get('opt_out', False),
+        send_logs=ctx.obj.get('send_logs', False),
     )
 
 
 @main.command('partial')
 @click.pass_context
-@click.option(
-    '--json',
-    'json_output',
-    help='Pass this flag to output results in json format. This enables '
-    'automation and integration with other applications if needed.',
-    is_flag=True,
-    default=False,
-)
-@click.option(
-    '--do-not-send-usage',
-    'opt_out',
-    help='Pass this flag to opt out from sending usage to WhatsApp. Sending '
-    'usage to WhatsApp could accelerate Direct Support ticket resolve time.',
-    is_flag=True,
-    default=False,
-)
-@click.option(
-    '--send-logs',
-    'send_logs',
-    help='Pass this flag to send WhatsApp Business API container logs '
-    'to WhatsApp. Not available in json mode.',
-    is_flag=True,
-    default=False,
-)
 @click.argument(
     'actions',
     default=None,
     required=True,
     nargs=-1,
 )
-def partial_debug(ctx, json_output, opt_out, send_logs, actions):
+@wadebug_option(opt_out)
+@wadebug_option(json_output)
+@wadebug_option(send_logs)
+def partial_debug(ctx, actions, **kwargs):
     """Execute debug routines provided. "wadebug ls" to actions available."""
     acts, acts_not_found = process_input_actions(actions)
 
     if acts_not_found:
-        if json_output:
+        if ctx.obj.get('json', False):
             handle_invalid_actions(acts_not_found)
         else:
             handle_invalid_actions_interactive(acts_not_found)
@@ -204,9 +159,9 @@ def partial_debug(ctx, json_output, opt_out, send_logs, actions):
 
     debug_implementation(
         acts,
-        json_output=should_print_json(ctx, json_output),
-        opt_out=should_opt_out(ctx, opt_out),
-        send_logs=should_send_logs(ctx, send_logs),
+        json_output=ctx.obj.get('json', False),
+        opt_out=ctx.obj.get('opt_out', False),
+        send_logs=ctx.obj.get('send_logs', False),
     )
 
 
@@ -404,30 +359,6 @@ def handle_config_missing():
             '\nYou have chosen not to create the config file. '
             'Some checks will be skipped as a result.\n',
             fg='yellow')
-
-
-def should_print_json(ctx, json_output_param):
-    """Decide if json should be printed"""
-
-    # this exists because option --json can be called in 2 ways
-    # wadebug --json some_subcommand
-    # wadebug some_subcommand --json
-
-    # click treats each some_subcommand independently, so the subcommand must
-    # check the parameter.
-    # however, we also want to pass --json on the parent command
-    # to do that, we check for indication to use json in both places
-    return json_output_param or ctx.obj['JSON']
-
-
-def should_opt_out(ctx, opt_out_param):
-    "Decide if user opts out of sending usage (actions + results) to Facebook"
-    return opt_out_param or ctx.obj['OPT_OUT']
-
-
-def should_send_logs(ctx, send_logs_param):
-    """Decide if logs should be sent to WhatsApp"""
-    return send_logs_param or ctx.obj['SEND_LOGS']
 
 
 if __name__ == '__main__':
