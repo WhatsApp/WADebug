@@ -20,6 +20,11 @@ import sys
 import yaml
 
 import click
+
+
+# Change to True to enable easier investigation of wadebug issues
+DEVELOPMENT_MODE = False
+
 # Disabling warning as using unicode_literals is considered ok
 # when back-porting Python3 to Python2/3
 # http://python-future.org/imports.html#should-i-import-unicode-literals
@@ -33,6 +38,9 @@ def safe_main():
     try:
         main()
     except Exception as e:
+        if DEVELOPMENT_MODE:
+            raise
+
         print(
             'An error occurred with WADebug:\n{}\n'.format(e),
             'Please report this via Direct Support (https://business.facebook.com/direct-support) ',
