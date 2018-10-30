@@ -78,30 +78,17 @@ send_logs = ReusableParam(
 
 @click.group(invoke_without_command=True)
 @click.pass_context
-@click.option(
-    '--version',
-    'version',
-    help='Print wadebug tool version.',
-    is_flag=True,
-    default=False,
-)
+@click.version_option(pkg_resources.get_distribution('wadebug').version)
 @wadebug_option(opt_out)
 @wadebug_option(json_output)
 @wadebug_option(send_logs)
-def main(ctx, version, **kwargs):
+def main(ctx, **kwargs):
     """Investigate issues with WhatsApp Business API setup."""
 
     # Program entry point. When no arguments, executes full_debug.
     # Else execute specific command (click handles this case implicitly)
 
     # used to pass variables between commands and sub-commands
-
-    if version:
-        click.echo('WADebug version {}'.format(
-            pkg_resources.get_distribution('wadebug').version)
-        )
-        sys.exit(0)
-
     if ctx.invoked_subcommand is None:
         ctx.invoke(full_debug)
 
