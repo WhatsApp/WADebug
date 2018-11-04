@@ -6,6 +6,8 @@
 from wadebug import cli_utils
 from wadebug.analytics import Analytics
 
+from io import BytesIO
+
 
 class TestSendResultsToFB:
     def test_should_append_run_id_to_result_if_succeed(self, mocker):
@@ -14,11 +16,11 @@ class TestSendResultsToFB:
         mock_result = {'dummy_action': {'result': 'OK'}}
 
         mocker.patch.object(
-            Analytics, 'send_report_to_fb', return_value=mock_run_id)
+            Analytics, 'send_event', return_value=mock_run_id)
 
         cli_utils.send_results_to_fb(mock_result, mock_success_callback)
 
-        Analytics.send_report_to_fb.assert_called()
+        Analytics.send_event.assert_called()
         mock_success_callback.assert_called()
         assert mock_result['run_id'] == mock_run_id
 
@@ -28,7 +30,7 @@ class TestSendResultsToFB:
         mock_result = {'dummy_action': {'result': 'OK'}}
 
         mocker.patch.object(
-            Analytics, 'send_report_to_fb', side_effect=mock_exception)
+            Analytics, 'send_event', side_effect=mock_exception)
 
         cli_utils.send_results_to_fb(
             mock_result, failure_callback=mock_failure_callback)
@@ -44,7 +46,12 @@ class TestSendLogsToFB:
         mocker.patch.object(
             Analytics, 'send_logs_to_fb', return_value=mock_run_id)
 
-        cli_utils.send_logs_to_fb(mock_success_callback)
+        dummy_zip_file = BytesIO(b'not important')
+
+        mocker.patch(
+            'wadebug.wa_actions.log_utils.prepare_logs', return_value=dummy_zip_file)
+
+        cli_utils.send_logs_to_fb(success_callback=mock_success_callback)
 
         Analytics.send_logs_to_fb.assert_called()
         mock_success_callback.assert_called_with(mock_run_id)
@@ -55,6 +62,10 @@ class TestSendLogsToFB:
 
         mocker.patch.object(
             Analytics, 'send_logs_to_fb', side_effect=mock_exception)
+
+        dummy_zip_file = BytesIO(b'not important')
+        mocker.patch(
+            'wadebug.wa_actions.log_utils.prepare_logs', return_value=dummy_zip_file)
 
         cli_utils.send_logs_to_fb(failure_callback=mock_failure_callback)
 
