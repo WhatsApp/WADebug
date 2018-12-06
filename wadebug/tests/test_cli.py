@@ -21,7 +21,7 @@ def test_cli_should_not_throw(mocker, monkeypatch):
 
     try:
         cli.safe_main()
-    except Exception as e:
+    except Exception:
         pytest.fail(
             'cli.safe_main should never throw if cli.DEVELOPMENT_MODE == False\n{}'.format(traceback.format_exc()))
 

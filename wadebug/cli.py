@@ -289,7 +289,7 @@ def load_config_interactive():
     except yaml.parser.ParserError as e:
         ui.print_invalid_config_message(CONFIG_FILE, e)
         sys.exit(-1)
-    except Exception as e:
+    except Exception:
         handle_config_missing()
         return {}
 

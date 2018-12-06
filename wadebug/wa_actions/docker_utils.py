@@ -23,6 +23,7 @@ DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 EXPIRED_DATE_FORMAT = '%Y-%m-%d'
 LIFETIME_OF_BETA_BUILD_IN_DAYS = 45
 LIFETIME_OF_BUILD_IN_DAYS = 180
+MAX_LINE_OF_LOGS = 10000
 
 
 def get_all_containers():
@@ -31,7 +32,7 @@ def get_all_containers():
 
 
 def get_container_logs(container):
-    return container.logs()
+    return container.logs(tail=MAX_LINE_OF_LOGS)
 
 
 def get_inspect_result(container):
