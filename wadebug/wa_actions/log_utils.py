@@ -55,6 +55,12 @@ def get_logs():
                 os.path.join(OUTPUT_FOLDER, '{}-inspect.log'.format(container.name)),
                 json.dumps(inspect_result, indent=1),
             )
+            if docker_utils.WA_COREAPP_CONTAINER_TAG == container_type:
+                core_dump_results = docker_utils.get_core_dump_logs(container)
+                docker_utils.write_to_file(
+                    os.path.join(OUTPUT_FOLDER, '{}-coredump.log'.format(container.name)),
+                    core_dump_results,
+                )
             if docker_utils.WA_WEBAPP_CONTAINER_TAG == container_type:
                 copy_additional_logs_for_webcontainer(container, WEB_LOG_PATH, WEB_LOG_FILE)
                 copy_additional_logs_for_webcontainer(container, WEB_ERROR_LOG_PATH, WEB_ERROR_LOG_PATH)

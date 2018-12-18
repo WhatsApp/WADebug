@@ -32,6 +32,9 @@ def test_should_return_true_if_get_logs_has_no_exceptions(mocker):
         docker_utils, 'get_inspect_result', return_value='Fake inspect results'
     )
     mocker.patch.object(
+        docker_utils, 'get_core_dump_logs', return_value='Fake Core Dumps'
+    )
+    mocker.patch.object(
         docker_utils, 'write_to_file_in_binary', return_value=None
     )
     mocker.patch.object(

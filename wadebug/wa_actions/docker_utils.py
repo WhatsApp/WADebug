@@ -9,6 +9,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from datetime import datetime
 from datetime import timedelta
+from enum import Enum
 
 import tempfile
 import tarfile
@@ -44,6 +45,26 @@ def get_inspect_result(container):
             arr = value.split('=')
             res['Config']['Env'][index] = arr[0] + '*******'
     return res
+
+
+def get_core_dump_logs(container):
+    client = docker.from_env()
+    files_changed = client.api.diff(container.short_id)
+    coredump_logs = []
+    for file_change in files_changed:
+        file_change_type = file_change['Kind']
+        full_path = file_change['Path']
+        # the crash files should have names like:
+        # /usr/local/waent/logs/wa-service-bffb11a7-crash.log
+        if (
+            '-crash.log' in full_path
+            and file_change_type != DockerDiffFileChange.DELETED
+        ):
+            folder_path, file_name = full_path.rsplit('/', 1)
+            coredump = get_archive_from_container(container, folder_path, file_name)
+            coredump_logs.append(coredump)
+    result = '\n'.join(coredump_logs)
+    return result
 
 
 def get_archive_from_container(container, path, file_name):
@@ -219,6 +240,12 @@ def get_expiry_date(version, ts):
     else:
         expiry_date = dt_ts + timedelta(LIFETIME_OF_BUILD_IN_DAYS)
     return str(expiry_date)
+
+
+class DockerDiffFileChange(Enum):
+    CREATED = 0
+    MODIFIED = 1
+    DELETED = 2
 
 
 class WAContainer:
