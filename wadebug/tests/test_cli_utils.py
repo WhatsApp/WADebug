@@ -48,10 +48,7 @@ class TestSendLogsToFB:
 
         dummy_zip_file = BytesIO(b'not important')
 
-        mocker.patch(
-            'wadebug.wa_actions.log_utils.prepare_logs', return_value=dummy_zip_file)
-
-        cli_utils.send_logs_to_fb(success_callback=mock_success_callback)
+        cli_utils.send_logs_to_fb(dummy_zip_file, success_callback=mock_success_callback)
 
         Analytics.send_logs_to_fb.assert_called()
         mock_success_callback.assert_called_with(mock_run_id)
@@ -64,9 +61,7 @@ class TestSendLogsToFB:
             Analytics, 'send_logs_to_fb', side_effect=mock_exception)
 
         dummy_zip_file = BytesIO(b'not important')
-        mocker.patch(
-            'wadebug.wa_actions.log_utils.prepare_logs', return_value=dummy_zip_file)
 
-        cli_utils.send_logs_to_fb(failure_callback=mock_failure_callback)
+        cli_utils.send_logs_to_fb(dummy_zip_file, failure_callback=mock_failure_callback)
 
         mock_failure_callback.assert_called_with(mock_exception)

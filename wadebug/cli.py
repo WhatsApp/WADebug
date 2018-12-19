@@ -7,11 +7,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
+from wadebug import exceptions
 from wadebug import results
 from wadebug import ui
 from wadebug import wa_actions
 from wadebug import cli_utils
 from wadebug.cli_param import wadebug_option, ReusableParam
+from wadebug.wa_actions import log_utils
 
 import json
 import os
@@ -81,7 +83,6 @@ send_logs = ReusableParam(
 @click.version_option(pkg_resources.get_distribution('wadebug').version)
 @wadebug_option(opt_out)
 @wadebug_option(json_output)
-@wadebug_option(send_logs)
 def main(ctx, **kwargs):
     """Investigate issues with WhatsApp Business API setup."""
 
@@ -113,11 +114,51 @@ def ls(ctx, **kwargs):
     click.echo()
 
 
+@main.command()
+@click.pass_context
+@click.option(
+    '--send',
+    'send',
+    help='Opt to send logs to Facebook for help on Direct Support.',
+    is_flag=True,
+    default=False,
+)
+@wadebug_option(opt_out)
+@wadebug_option(json_output)
+def logs(ctx, send, **kwargs):
+    """Saves multiple logfiles on current folder at ./wadebug_logs/"""
+    opt_out = ctx.obj.get('opt_out', False)
+    json_output = ctx.obj.get('json', False)
+    logs_folder = os.path.join(os.getcwd(), log_utils.OUTPUT_FOLDER)
+    output = {'success': False}
+    if json_output:
+        prepare_logs, handle_outputs, handle_exceptions, handle_upload_results = \
+            get_logs_json_handlers(
+                send, opt_out, logs_folder
+            )
+    else:
+        prepare_logs, handle_outputs, handle_exceptions, handle_upload_results = \
+            get_logs_interactive_handlers(
+                send, opt_out, logs_folder
+            )
+    prepare_logs()
+    try:
+        zipped_logs_file_handle, log_files = log_utils.prepare_logs()
+        output = handle_outputs(
+            log_files, output, zipped_logs_file_handle.name
+        )
+    except exceptions.LogsNotCompleteError as e:
+        handle_exceptions(e, output)
+    except exceptions.FileAccessError as e:
+        handle_exceptions(e, output)
+
+    handle_upload_results(output, zipped_logs_file_handle)
+
+
 @main.command('full')
 @click.pass_context
 @wadebug_option(opt_out)
 @wadebug_option(json_output)
-@wadebug_option(send_logs)
 def full_debug(ctx, **kwargs):
     """Execute all debug routines, executed by default."""
     acts = wa_actions.get_all_actions()
@@ -126,7 +167,6 @@ def full_debug(ctx, **kwargs):
         acts,
         json_output=ctx.obj.get('json', False),
         opt_out=ctx.obj.get('opt_out', False),
-        send_logs=ctx.obj.get('send_logs', False),
     )
 
 
@@ -140,9 +180,8 @@ def full_debug(ctx, **kwargs):
 )
 @wadebug_option(opt_out)
 @wadebug_option(json_output)
-@wadebug_option(send_logs)
 def partial_debug(ctx, actions, **kwargs):
-    """Execute debug routines provided. "wadebug ls" to actions available."""
+    """Execute debug routines provided. 'wadebug ls' to actions available."""
     acts, acts_not_found = process_input_actions(actions)
 
     if acts_not_found:
@@ -156,7 +195,6 @@ def partial_debug(ctx, actions, **kwargs):
         acts,
         json_output=ctx.obj.get('json', False),
         opt_out=ctx.obj.get('opt_out', False),
-        send_logs=ctx.obj.get('send_logs', False),
     )
 
 
@@ -189,11 +227,9 @@ def handle_invalid_actions_interactive(acts_not_found):
     click.echo('Please run wadebug ls to list all available actions.')
 
 
-def debug_implementation(acts, json_output, opt_out, send_logs):
+def debug_implementation(acts, json_output, opt_out):
     if json_output:
         debug_json(acts, opt_out)
-    elif send_logs:
-        debug_send_logs()
     else:
         debug_interactive(acts, opt_out)
 
@@ -205,21 +241,15 @@ def debug_json(acts, opt_out):
         cli_utils.send_results_to_fb(result)
 
 
-def debug_send_logs():
-    click.echo('Collecting and uploading logs...')
-    cli_utils.send_logs_to_fb(
-        success_callback=handle_upload_logs_success_interactive,
-        failure_callback=handle_upload_logs_failure_interactive)
-
-
 def debug_interactive(acts, opt_out):
     result, has_problem = execute_actions_interactive(acts)
 
     if not opt_out:
         cli_utils.send_results_to_fb(
             result,
-            success_callback=handle_upload_results_success_interactive,
-            failure_callback=handle_upload_results_failure_interactive)
+            success_callback=send_usage_result_interactive_success,
+            failure_callback=send_result_interactive_failure,
+        )
 
     if has_problem:
         click.secho(
@@ -294,32 +324,87 @@ def load_config_interactive():
         return {}
 
 
-def handle_upload_results_success_interactive(result):
-    click.secho(
-        'A report of this run has been uploaded to Facebook.  '
-        'You can reference run_id ({}) in Direct Support '
-        '(https://business.facebook.com/direct-support) '
-        'tickets'.format(result['run_id']),
-        fg='yellow',
-    )
+def get_logs_json_handlers(send, opt_out, logs_folder):
+    def prepare_logs():
+        if send and opt_out:
+            output = {'success': False}
+            output['error_msg'] =\
+                'Passing --send flag requires to send data to Facebook.\n'\
+                'It\'s incompatible with --do-not-send-usage. '\
+                'Please use only one of those flags.'
+            click.echo(json.dumps(output))
+
+    def handle_outputs(log_files, output, _zipped_logs_file_name):
+        # _zipped_logs_file_name is not used in this function
+        # it is in the function signature to keep it consistent with
+        # other handle_outputs functions
+        output['log_files'] = log_files
+        output['success'] = True
+        return output
+
+    def handle_exceptions(exp, output):
+        output['error_msg'] = 'wadebug could not retrieve logs:\n{}\n'.format(exp)
+        click.echo(json.dumps(output))
+        sys.exit(-1)
+
+    def handle_upload_results(output, zipped_logs_file_handle):
+        if send:
+            send_logs_result = cli_utils.send_logs_to_fb(
+                zipped_logs_file_handle,
+                success_callback=send_logs_result_json_success,
+                failure_callback=send_result_json_failure)
+            output.update(send_logs_result)
+        elif not opt_out:
+            cli_utils.send_results_to_fb(
+                output,
+                success_callback=send_usage_result_json_success,
+                failure_callback=send_result_json_failure
+            )
+        click.echo(json.dumps(output))
+
+    return prepare_logs, handle_outputs, handle_exceptions, handle_upload_results
 
 
-def handle_upload_results_failure_interactive(e):
-    click.secho('Could not send report to Facebook:\n{}'.format(e), fg='red')
+def get_logs_interactive_handlers(send, opt_out, logs_folder):
+    def prepare_logs():
+        if send and opt_out:
+            click.secho(
+                'Passing --send flag requires to send data to Facebook.\n'
+                'It\'s incompatible with --do-not-send-usage. '
+                'Please use only one of those flags.',
+                fg='red',
+            )
+            sys.exit(-1)
+        click.echo('Collecting logs on {}\nPlease wait...'.format(logs_folder))
 
+    def handle_outputs(log_files, _output, zipped_logs_file_name):
+        click.secho('Zipped logs at: {}'.format(zipped_logs_file_name), bold=True)
+        click.secho('Log files retrieved:\n\t', nl=False, bold=True)
+        click.echo('\n\t'.join(log_files))
+        # returning _output to keep it consistent with other handle_outputs
+        # functions
+        return _output
 
-def handle_upload_logs_success_interactive(run_id):
-    click.secho(
-        'Container logs have been uploaded to Facebook.  '
-        'You can reference run_id ({}) in Direct Support '
-        '(https://business.facebook.com/direct-support) '
-        'tickets'.format(run_id),
-        fg='yellow',
-    )
+    def handle_exceptions(exp, _output):
+        click.echo('wadebug could not retrieve logs:\n{}\n'.format(exp))
+        sys.exit(-1)
 
+    def handle_upload_results(output, zipped_logs_file_handle):
+        if send:
+            click.echo('Sending logs to Facebook\nPlease wait...')
+            cli_utils.send_logs_to_fb(
+                zipped_logs_file_handle,
+                success_callback=send_logs_result_interactive_success,
+                failure_callback=send_result_interactive_failure)
+        elif not opt_out:
+            click.echo('Sending report to Facebook\nPlease wait...')
+            cli_utils.send_results_to_fb(
+                output,
+                success_callback=send_usage_result_interactive_success,
+                failure_callback=send_result_interactive_failure
+            )
 
-def handle_upload_logs_failure_interactive(e):
-    click.secho('Could not send logs to Facebook:\n{}'.format(e), fg='red')
+    return prepare_logs, handle_outputs, handle_exceptions, handle_upload_results
 
 
 def handle_config_missing():
@@ -354,6 +439,60 @@ def handle_config_missing():
             '\nYou have chosen not to create the config file. '
             'Some checks will be skipped as a result.\n',
             fg='yellow')
+
+
+def send_logs_result_json_success(run_id):
+    return {
+        'success': True,
+        'message': 'Container logs have been uploaded to Facebook.  '
+        'You can reference run_id ({}) in Direct Support '
+        '(https://business.facebook.com/direct-support) '
+        'tickets'.format(run_id),
+        'run_id': run_id,
+    }
+
+
+def send_usage_result_interactive_success(result):
+    click.secho(
+        'A report of this run has been uploaded to Facebook.  '
+        'You can reference run_id ({}) in Direct Support '
+        '(https://business.facebook.com/direct-support) '
+        'tickets'.format(result['run_id']),
+        fg='yellow',
+    )
+
+
+def send_logs_result_interactive_success(run_id):
+    click.secho(
+        'Container logs of this run have been uploaded to Facebook.  '
+        'You can reference run_id ({}) in Direct Support '
+        '(https://business.facebook.com/direct-support) '
+        'tickets'.format(run_id),
+        fg='yellow',
+    )
+
+
+def send_result_interactive_failure(e):
+    click.secho('Could not send report to Facebook:\n{}'.format(e), fg='red')
+
+
+def send_usage_result_json_success(output):
+    run_id = output['run_id']
+    return {
+        'success': True,
+        'message': 'Container logs have been uploaded to Facebook.  '
+        'You can reference run_id ({}) in Direct Support '
+        '(https://business.facebook.com/direct-support) '
+        'tickets'.format(run_id),
+        'run_id': run_id,
+    }
+
+
+def send_result_json_failure(e):
+    return {
+        'success': False,
+        'message': 'Could not send report to Facebook:\n{}'.format(e),
+    }
 
 
 if __name__ == '__main__':

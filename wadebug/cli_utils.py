@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 from wadebug.analytics import Analytics, Events
-from wadebug.wa_actions import log_utils
 
 import json
 import pkg_resources
@@ -42,13 +41,12 @@ def send_results_to_fb(result, success_callback=None, failure_callback=None):
             failure_callback(e)
 
 
-def send_logs_to_fb(success_callback=None, failure_callback=None):
+def send_logs_to_fb(zipped_logs_file_handle, success_callback=None, failure_callback=None):
     try:
-        zipped_logs_file_handle = log_utils.prepare_logs()
         run_id = Analytics.send_logs_to_fb(zipped_logs_file_handle)
 
         if success_callback:
-            success_callback(run_id)
+            return success_callback(run_id)
     except Exception as e:
         if failure_callback:
-            failure_callback(e)
+            return failure_callback(e)

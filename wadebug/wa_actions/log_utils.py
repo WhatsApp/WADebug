@@ -22,10 +22,11 @@ WEB_ERROR_LOG_FILE = 'error.log'
 
 def prepare_logs():
     check_access()
-    get_logs()
+    log_files = get_logs()
     path = os.path.join(os.getcwd(), 'wadebug_logs/')
     shutil.make_archive('wadebug_logs', 'zip', path)
-    return open(os.path.join(os.getcwd(), 'wadebug_logs.zip'), 'rb')
+
+    return open(os.path.join(os.getcwd(), 'wadebug_logs.zip'), 'rb'), log_files
 
 
 def check_access():
@@ -42,28 +43,38 @@ def check_access():
 
 def get_logs():
     wa_containers = docker_utils.get_wa_containers()
+    log_files = []
     errors = []
     for wa_container in wa_containers:
         container = wa_container.container
         container_type = wa_container.container_type
         try:
             container_logs = docker_utils.get_container_logs(container)
-            docker_utils.write_to_file_in_binary(
-                os.path.join(OUTPUT_FOLDER, '{}-container.log'.format(container.name)), container_logs)
+            log_filename = os.path.join(OUTPUT_FOLDER, '{}-container.log'.format(container.name))
+            docker_utils.write_to_file_in_binary(log_filename, container_logs)
+            log_files.append(log_filename)
+
             inspect_result = docker_utils.get_inspect_result(container)
+            inspect_result_filename = os.path.join(OUTPUT_FOLDER, '{}-inspect.log'.format(container.name))
             docker_utils.write_to_file(
-                os.path.join(OUTPUT_FOLDER, '{}-inspect.log'.format(container.name)),
+                inspect_result_filename,
                 json.dumps(inspect_result, indent=1),
             )
+            log_files.append(inspect_result_filename)
             if docker_utils.WA_COREAPP_CONTAINER_TAG == container_type:
                 core_dump_results = docker_utils.get_core_dump_logs(container)
+                core_dump_filename = os.path.join(OUTPUT_FOLDER, '{}-coredump.log'.format(container.name))
                 docker_utils.write_to_file(
-                    os.path.join(OUTPUT_FOLDER, '{}-coredump.log'.format(container.name)),
+                    core_dump_filename,
                     core_dump_results,
                 )
+                log_files.append(core_dump_filename)
             if docker_utils.WA_WEBAPP_CONTAINER_TAG == container_type:
-                copy_additional_logs_for_webcontainer(container, WEB_LOG_PATH, WEB_LOG_FILE)
-                copy_additional_logs_for_webcontainer(container, WEB_ERROR_LOG_PATH, WEB_ERROR_LOG_PATH)
+                webapp_log = copy_additional_logs_for_webcontainer(container, WEB_LOG_PATH, WEB_LOG_FILE)
+                webapp_error_log = \
+                    copy_additional_logs_for_webcontainer(container, WEB_ERROR_LOG_PATH, WEB_ERROR_LOG_PATH)
+                log_files.append(webapp_log)
+                log_files.append(webapp_error_log)
         except Exception as e:
             print(e)
             errors.append((container, e))
@@ -75,11 +86,14 @@ def get_logs():
         )
         raise exceptions.LogsNotCompleteError(exception_msg)
 
+    return [lf for lf in log_files if lf is not None]
+
 
 def copy_additional_logs_for_webcontainer(container, path, file_name):
     try:
         logs = docker_utils.get_archive_from_container(container, path, file_name)
         path = os.path.join(OUTPUT_FOLDER, '{}-{}'.format(container.name, file_name))
         docker_utils.write_to_file(path, logs)
+        return path
     except (KeyError, docker.errors.NotFound):
         pass
