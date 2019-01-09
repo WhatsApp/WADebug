@@ -9,15 +9,16 @@ WADebug is a command-line tool to find issues with WhatsApp Business API setup
 from setuptools import find_packages, setup
 
 dependencies = [
-    'six',
     'click',
-    'PyMySQL',
     'docker',
+    'enum34;python_version<"3.4"',
+    'pydash',
+    'PyMySQL',
     'pytest',
     'pytest-cov',
     'pytest-mock',
     'PyYAML',
-    'pydash',
+    'six',
 ]
 
 setup(
