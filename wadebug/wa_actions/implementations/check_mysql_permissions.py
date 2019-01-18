@@ -32,11 +32,17 @@ class CheckMySQLPermissions(WAAction):
     @classmethod
     def _run(cls, config, *args, **kwargs):
         db_config = config.get('db')
+        cur_user = db_config.get('user')
+
         errors = []
+        remediation = """
+Run MySQL command:
+    GRANT ALL PRIVILEGES ON *.* TO \'{}\'@\'{}\'
+to grant all privileges to the db user `{}` and rerun the checks.
+        """.format(cur_user, db_config.get('host'), cur_user)
 
         try:
             mysql_utils = MySQLUtil(**db_config)
-            cur_user = db_config.get('user')
             with mysql_utils.create_connection() as cursor:
                 result = get_user_privileges(
                     cursor, ','.join(PRIVILIGES), cur_user)
@@ -48,7 +54,7 @@ class CheckMySQLPermissions(WAAction):
                 cls,
                 'Unable to connect to db to check permisions',
                 e,
-                '',
+                remediation,
             )
 
         if errors:
@@ -56,7 +62,7 @@ class CheckMySQLPermissions(WAAction):
                 cls,
                 'Some required db permisions are missing',
                 'Missing Permissions : {}'.format(' , '.join(PRIVILIGES)),
-                '',)
+                remediation,)
 
         return results.OK(cls)
 
