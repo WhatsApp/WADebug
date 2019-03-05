@@ -8,3 +8,12 @@ db:
   user: # for example, "root"
   # password of the username that is used to connect to the MySQL database
   password: # for example, "your_database_password"
+
+# configurations related to WhatsApp Business API
+webapp:
+  # url accessible from the host running wadebug
+  baseUrl: # https://localhost:9090
+  # WhatsApp Business API user account credentials to call Support API
+  user: # for example, "wadebug"
+  # WhatsApp Business API user account credentials to call Support API
+  password: # for example, "secretdebugger"

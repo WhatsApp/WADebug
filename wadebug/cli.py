@@ -39,6 +39,7 @@ CONFIG_FILE = 'wadebug.conf.yml'
 def safe_main():
     try:
         main()
+
     except Exception as e:
         if DEVELOPMENT_MODE:
             raise

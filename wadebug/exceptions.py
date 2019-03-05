@@ -9,13 +9,18 @@ class Error(Exception):
     pass
 
 
+class FBNetworkError(Error):
+    """Raised when a network connection to FB cannot be made"""
+    pass
+
+
 class FileAccessError(Error):
     """Raised when a file access error occurs"""
     pass
 
 
-class FBNetworkError(Error):
-    """Raised when a network connection to FB cannot be made"""
+class InvalidParamType(Error):
+    """Raised when trying to use an invalid param_type for a cli_param.ReusableParam"""
     pass
 
 
@@ -24,6 +29,11 @@ class LogsNotCompleteError(Error):
     pass
 
 
-class InvalidParamType(Error):
-    """Raised when trying to use an invalid param_type for a cli_param.ReusableParam"""
+class WABizAuthError(Error):
+    """Raised when the authentication token used is invalid"""
+    pass
+
+
+class WABizNetworkError(Error):
+    """Raised when a network connection to Webapp cannot be made"""
     pass
