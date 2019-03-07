@@ -9,8 +9,6 @@ import json
 import pkg_resources
 import yaml
 
-CONFIG_FILE = 'wadebug.conf.yml'
-
 
 def get_config_from_file(config_file):
     with open(config_file, 'r') as f:
@@ -18,11 +16,11 @@ def get_config_from_file(config_file):
     return config
 
 
-def create_default_config_file(sample_config_file_path):
+def create_default_config_file(sample_config_file_path, config_file_path):
     config_file_stream = pkg_resources.resource_string(__name__,
                                                        sample_config_file_path)
 
-    with open(CONFIG_FILE, 'wb') as f:
+    with open(config_file_path, 'wb') as f:
         f.write(config_file_stream)
 
 

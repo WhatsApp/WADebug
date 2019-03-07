@@ -238,14 +238,14 @@ def debug_implementation(acts, json_output, opt_out):
 def debug_json(acts, opt_out):
     result = execute_actions(acts)
 
-    if not opt_out:
+    if not opt_out and not DEVELOPMENT_MODE:
         cli_utils.send_results_to_fb(result)
 
 
 def debug_interactive(acts, opt_out):
     result, has_problem = execute_actions_interactive(acts)
 
-    if not opt_out:
+    if not opt_out and not DEVELOPMENT_MODE:
         cli_utils.send_results_to_fb(
             result,
             success_callback=send_usage_result_interactive_success,
@@ -349,6 +349,9 @@ def get_logs_json_handlers(send, opt_out, logs_folder):
         sys.exit(-1)
 
     def handle_upload_results(output, zipped_logs_file_handle):
+        if DEVELOPMENT_MODE:
+            return
+
         if send:
             send_logs_result = cli_utils.send_logs_to_fb(
                 zipped_logs_file_handle,
@@ -391,6 +394,9 @@ def get_logs_interactive_handlers(send, opt_out, logs_folder):
         sys.exit(-1)
 
     def handle_upload_results(output, zipped_logs_file_handle):
+        if DEVELOPMENT_MODE:
+            return
+
         if send:
             click.echo('Sending logs to Facebook\nPlease wait...')
             cli_utils.send_logs_to_fb(
@@ -420,7 +426,7 @@ def handle_config_missing():
 
     if permission_granted:
         try:
-            cli_utils.create_default_config_file(SAMPLE_CONFIG_FILE)
+            cli_utils.create_default_config_file(SAMPLE_CONFIG_FILE, CONFIG_FILE)
 
             click.echo(
                 'The config file has been created at {}. '
