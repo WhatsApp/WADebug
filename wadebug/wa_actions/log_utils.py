@@ -4,7 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 from wadebug import exceptions
+from wadebug import cli_utils
 from wadebug.wa_actions import docker_utils
+from wadebug.wa_actions.wabiz_api import WABizAPI
 
 import docker
 import errno
@@ -12,8 +14,9 @@ import json
 import shutil
 import os
 
-
+CONFIG_FILE = 'wadebug.conf.yml'
 OUTPUT_FOLDER = 'wadebug_logs'
+SUPPORT_INFO_LOG_FILE = 'support-info.log'
 WEB_LOG_PATH = '/var/log/whatsapp'
 WEB_LOG_FILE = 'web.log'
 WEB_ERROR_LOG_PATH = '/var/log/lighttpd'
@@ -23,6 +26,9 @@ WEB_ERROR_LOG_FILE = 'error.log'
 def prepare_logs():
     check_access()
     log_files = get_logs()
+    support_info_file = get_support_info()
+    if support_info_file:
+        log_files.append(support_info_file)
     path = os.path.join(os.getcwd(), 'wadebug_logs/')
     shutil.make_archive('wadebug_logs', 'zip', path)
 
@@ -125,3 +131,19 @@ def copy_additional_logs_for_webcontainer(container, path, file_name):
         return path
     except (KeyError, docker.errors.NotFound):
         pass
+
+
+def get_support_info():
+    support_info_filename = os.path.join(OUTPUT_FOLDER, SUPPORT_INFO_LOG_FILE)
+    try:
+        config = cli_utils.get_config_from_file(CONFIG_FILE)
+        api = WABizAPI(**config.get('webapp'))
+        support_info_content = api.get_support_info()
+    except Exception:
+        return
+
+    docker_utils.write_to_file(
+        support_info_filename,
+        json.dumps(support_info_content, indent=2),
+    )
+    return support_info_filename

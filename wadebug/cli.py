@@ -385,6 +385,13 @@ def get_logs_interactive_handlers(send, opt_out, logs_folder):
         click.secho('Zipped logs at: {}'.format(zipped_logs_file_name), bold=True)
         click.secho('Log files retrieved:\n\t', nl=False, bold=True)
         click.echo('\n\t'.join(log_files))
+
+        support_info_file_path = os.path.join(log_utils.OUTPUT_FOLDER, log_utils.SUPPORT_INFO_LOG_FILE)
+        if support_info_file_path not in log_files:
+            click.secho('Support Info is an important piece of info that helps us understand '
+                        'the state of your WhatsApp Business API client. We were not able to '
+                        'retrieve it because the configuration file has wrong or missing values.  '
+                        'Please double check and then run the logs command again to capture this.', fg='yellow')
         # returning _output to keep it consistent with other handle_outputs
         # functions
         return _output

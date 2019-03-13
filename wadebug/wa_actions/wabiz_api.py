@@ -39,27 +39,29 @@ class WABizAPI:
             warnings.simplefilter('ignore', InsecureRequestWarning)
             self.api_header = self.__gen_req_header()
         else:
-            raise ValueError('One or more required params (baseURL, user, password) are missing.')
+            raise ValueError('One or more required params (baseUrl, user, password) are missing.')
 
     def __gen_req_header(self):
-        encoded = base64.b64encode('{}:{}'.format(self.api_user, self.api_password).encode())
-
+        # encode(): string -> byte, to use in b64encode()
+        # decode(): byte -> string, to use in header
+        encoded = base64.b64encode('{}:{}'.format(self.api_user, self.api_password).encode()).decode()
         try:
             res = requests.post(
                 url=urljoin(self.api_baseUrl, self.LOGIN_USER_ENDPOINT),
                 headers={'AUTHORIZATION': 'Basic {}'.format(encoded)},
                 verify=False,  # disable ssl verification
             )
-
             if res.status_code == 401:
                 raise exceptions.WABizAuthError(
-                    'API authentication error.  Please check your configuration. \nDetails:{}'.format(res.json())
+                    'API authentication error.  Please check your configuration file (wadebug.conf.yml '
+                    'in current directory).'
                 )
 
             res = res.json()
         except requests.exceptions.RequestException as e:
             raise exceptions.WABizNetworkError(
-                'Network request error. Please check your configuration. \nDetails:{}'.format(e)
+                'Network request error. Please check your configuration. (wadebug.conf.yml in current directory)'
+                '\nDetails:{}'.format(e)
             )
 
         token = res['users'][0]['token']
@@ -78,7 +80,7 @@ class WABizAPI:
 
             if res.status_code == 401:
                 raise exceptions.WABizAuthError(
-                    'API authentication error.  Please check your configuration. \nDetails:{}'.format(res.json())
+                    'API authentication error.  Please check your configuration.'
                 )
 
             return res.json()
