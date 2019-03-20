@@ -10,26 +10,22 @@ import traceback
 import pytest
 
 
-def test_should_not_be_in_dev_mode(mocker):
-    assert cli.DEVELOPMENT_MODE is False, 'cli.DEVELOPMENT_MODE should be False before commiting code'
-
-
-def test_cli_should_not_throw(mocker, monkeypatch):
+def test_cli_should_not_throw(mocker):
     mock_exception = Exception('something goes wrong!')
     mocker.patch.object(cli, 'main', side_effect=mock_exception)
-    monkeypatch.setattr(cli, 'DEVELOPMENT_MODE', False)
+    mocker.patch('wadebug.config.Config._development_mode', False)
 
     try:
         cli.safe_main()
     except Exception:
         pytest.fail(
-            'cli.safe_main should never throw if cli.DEVELOPMENT_MODE == False\n{}'.format(traceback.format_exc()))
+            'cli.safe_main should never throw if Config().development_mode == False\n{}'.format(traceback.format_exc()))
 
 
-def test_cli_should_throw_in_dev_mode(mocker, monkeypatch):
+def test_cli_should_throw_in_dev_mode(mocker):
     mock_exception = Exception('something goes wrong!')
     mocker.patch.object(cli, 'main', side_effect=mock_exception)
-    monkeypatch.setattr(cli, 'DEVELOPMENT_MODE', True)
+    mocker.patch('wadebug.config.Config._development_mode', True)
 
     with pytest.raises(Exception):
         cli.safe_main()

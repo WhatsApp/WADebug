@@ -12,6 +12,7 @@ from wadebug import results
 from wadebug import ui
 from wadebug import wa_actions
 from wadebug import cli_utils
+from wadebug.config import Config, ConfigLoadError
 from wadebug.cli_param import wadebug_option, ReusableParam
 from wadebug.wa_actions import log_utils
 
@@ -19,21 +20,14 @@ import json
 import os
 import pkg_resources
 import sys
-import yaml
 
 import click
 
-
-# Change to True to enable easier investigation of wadebug issues
-DEVELOPMENT_MODE = False
 
 # Disabling warning as using unicode_literals is considered ok
 # when back-porting Python3 to Python2/3
 # http://python-future.org/imports.html#should-i-import-unicode-literals
 click.disable_unicode_literals_warning = True
-
-SAMPLE_CONFIG_FILE = 'wadebug.conf.yml.SAMPLE'
-CONFIG_FILE = 'wadebug.conf.yml'
 
 
 def safe_main():
@@ -41,7 +35,7 @@ def safe_main():
         main()
 
     except Exception as e:
-        if DEVELOPMENT_MODE:
+        if Config().development_mode:
             raise
 
         print(
@@ -238,14 +232,14 @@ def debug_implementation(acts, json_output, opt_out):
 def debug_json(acts, opt_out):
     result = execute_actions(acts)
 
-    if not opt_out and not DEVELOPMENT_MODE:
+    if not opt_out and not Config().disable_send_data:
         cli_utils.send_results_to_fb(result)
 
 
 def debug_interactive(acts, opt_out):
     result, has_problem = execute_actions_interactive(acts)
 
-    if not opt_out and not DEVELOPMENT_MODE:
+    if not opt_out and not Config().disable_send_data:
         cli_utils.send_results_to_fb(
             result,
             success_callback=send_usage_result_interactive_success,
@@ -276,10 +270,7 @@ def execute_actions(actions):
 
 
 def load_config():
-    try:
-        return cli_utils.get_config_from_file(CONFIG_FILE)
-    except Exception:
-        return {}
+    return Config().values
 
 
 def execute_actions_interactive(actions):
@@ -315,14 +306,14 @@ def execute_actions_interactive(actions):
 
 
 def load_config_interactive():
-    try:
-        return cli_utils.get_config_from_file(CONFIG_FILE)
-    except yaml.parser.ParserError as e:
-        ui.print_invalid_config_message(CONFIG_FILE, e)
-        sys.exit(-1)
-    except Exception:
+    if Config().load_error == ConfigLoadError.CONFIG_MISSING:
         handle_config_missing()
         return {}
+    elif Config().load_error == ConfigLoadError.CONFIG_INVALID:
+        ui.print_invalid_config_message(Config.CONFIG_FILE, Config().load_exception)
+        sys.exit(-1)
+    else:
+        return Config().values
 
 
 def get_logs_json_handlers(send, opt_out, logs_folder):
@@ -349,7 +340,7 @@ def get_logs_json_handlers(send, opt_out, logs_folder):
         sys.exit(-1)
 
     def handle_upload_results(output, zipped_logs_file_handle):
-        if DEVELOPMENT_MODE:
+        if Config().development_mode:
             return
 
         if send:
@@ -401,7 +392,7 @@ def get_logs_interactive_handlers(send, opt_out, logs_folder):
         sys.exit(-1)
 
     def handle_upload_results(output, zipped_logs_file_handle):
-        if DEVELOPMENT_MODE:
+        if Config().disable_send_data:
             return
 
         if send:
@@ -432,8 +423,8 @@ def handle_config_missing():
         ))
 
     if permission_granted:
-        try:
-            cli_utils.create_default_config_file(SAMPLE_CONFIG_FILE, CONFIG_FILE)
+
+        if Config().create_default_config_file():
 
             click.echo(
                 'The config file has been created at {}. '
@@ -441,11 +432,11 @@ def handle_config_missing():
                 format(os.getcwd()))
 
             sys.exit(0)
-        except Exception as e:
+        else:
             click.secho(
                 '\nUnable to create config file at {}. Error: {}\n'
                 'Some checks will be skipped as a result.\n'.format(
-                    os.getcwd(), e),
+                    os.getcwd(), Config().create_exception),
                 fg='yellow')
 
     else:

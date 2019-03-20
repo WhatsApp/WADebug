@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from wadebug import exceptions
-from wadebug import cli_utils
+from wadebug.config import Config
 from wadebug.wa_actions import docker_utils
 from wadebug.wa_actions.wabiz_api import WABizAPI
 
@@ -136,9 +136,12 @@ def copy_additional_logs_for_webcontainer(container, path, file_name):
 def get_support_info():
     support_info_filename = os.path.join(OUTPUT_FOLDER, SUPPORT_INFO_LOG_FILE)
     try:
-        config = cli_utils.get_config_from_file(CONFIG_FILE)
-        api = WABizAPI(**config.get('webapp'))
-        support_info_content = api.get_support_info()
+        config = Config().values
+        if config:
+            api = WABizAPI(**config.get('webapp'))
+            support_info_content = api.get_support_info()
+        else:
+            return
     except Exception:
         return
 

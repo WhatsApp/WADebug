@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 from wadebug import exceptions
-from wadebug import cli_utils
 from wadebug.wa_actions import docker_utils
 from wadebug.wa_actions import log_utils
 from os import path
@@ -162,24 +161,23 @@ def test_should_write_webcontainer_log_to_file(mocker):
 def test_get_support_info_should_return_file_path_if_no_exceptions(mocker):
     mocker.patch('wadebug.wa_actions.wabiz_api.WABizAPI.__init__', return_value=None)
     mocker.patch('wadebug.wa_actions.wabiz_api.WABizAPI.get_support_info', return_value='mock_json_string')
-    mocked_config_call = mocker.patch.object(cli_utils, 'get_config_from_file', return_value={
-        'webapp': {}
-    })
+    mocker.patch('wadebug.config.Config.values', return_value={'webapp': {}})
+
     mocked_write_call = mocker.patch.object(
         docker_utils, 'write_to_file', return_value=None
     )
 
     support_info_file_path = log_utils.get_support_info()
 
-    assert mocked_config_call.call_count == 1
     assert mocked_write_call.call_count == 1
     assert support_info_file_path == 'wadebug_logs/support-info.log'
 
 
 def test_get_support_info_should_return_none_if_exception(mocker):
-    mocked_config_call = mocker.patch.object(
-        cli_utils,
-        'get_config_from_file',
+    mocker.patch('wadebug.config.Config.values', return_value={'webapp': {}})
+
+    mocked_config_call = mocker.patch(
+        'wadebug.wa_actions.wabiz_api.WABizAPI.__init__',
         side_exception=Exception('mock exception')
     )
     support_info_file_path = log_utils.get_support_info()

@@ -6,22 +6,6 @@
 from wadebug.analytics import Analytics, Events
 
 import json
-import pkg_resources
-import yaml
-
-
-def get_config_from_file(config_file):
-    with open(config_file, 'r') as f:
-        config = yaml.load(f)
-    return config
-
-
-def create_default_config_file(sample_config_file_path, config_file_path):
-    config_file_stream = pkg_resources.resource_string(__name__,
-                                                       sample_config_file_path)
-
-    with open(config_file_path, 'wb') as f:
-        f.write(config_file_stream)
 
 
 def send_results_to_fb(result, success_callback=None, failure_callback=None):
