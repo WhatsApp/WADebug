@@ -250,7 +250,7 @@ def debug_interactive(acts, opt_out):
         click.secho(
             'There is at least one problem detected. '
             'Please use the results and details provided to troubleshoot. '
-            'Additionally, you can run wadebug --send-logs to send '
+            'Additionally, you can run wadebug logs --send to send '
             'container logs to WhatsApp for further troubleshooting.',
             fg='yellow',
         )

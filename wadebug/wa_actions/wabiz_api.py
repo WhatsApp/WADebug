@@ -92,6 +92,4 @@ class WABizAPI:
     def get_phone_number(self):
         res = self.get_support_info()
         phone_number = res['support']['debug_info']
-        if phone_number == 'unregistered':
-            return None
         return phone_number
