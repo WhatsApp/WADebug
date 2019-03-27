@@ -63,15 +63,6 @@ json_output = ReusableParam(
     default=False,
 )
 
-send_logs = ReusableParam(
-    '--send-logs',
-    'send_logs',
-    help='Pass this flag to send WhatsApp Business API container logs '
-    'to WhatsApp. Not available in json mode.',
-    is_flag=True,
-    default=False,
-)
-
 
 @click.group(invoke_without_command=True)
 @click.pass_context
@@ -385,6 +376,8 @@ def get_logs_interactive_handlers(send, opt_out, logs_folder):
                         'Please double check and then run the logs command again to capture this.', fg='yellow')
         # returning _output to keep it consistent with other handle_outputs
         # functions
+        _output['success'] = True
+
         return _output
 
     def handle_exceptions(exp, _output):
