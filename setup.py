@@ -12,6 +12,7 @@ dependencies = [
     'click',
     'docker',
     'enum34;python_version<"3.4"',
+    'outdated',
     'pydash',
     'PyMySQL',
     'pytest',

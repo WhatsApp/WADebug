@@ -7,6 +7,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
+from outdated import check_outdated
 from wadebug import exceptions
 from wadebug import results
 from wadebug import ui
@@ -32,8 +33,20 @@ click.disable_unicode_literals_warning = True
 
 def safe_main():
     try:
-        main()
+        current_version = pkg_resources.get_distribution('wadebug').version
+        is_outdated, latest_version = check_outdated('wadebug', current_version)
+        if is_outdated:
+            click.secho(
+                'The current version of wadebug ({}) is out of date.  Run `pip3 install wadebug --upgrade` '
+                'to upgrade to the latest version ({})\n'.format(
+                    current_version, latest_version),
+                fg='yellow')
+    except Exception:
+        if Config().development_mode:
+            raise
 
+    try:
+        main()
     except Exception as e:
         if Config().development_mode:
             raise
