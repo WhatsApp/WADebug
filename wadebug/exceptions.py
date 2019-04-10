@@ -29,8 +29,18 @@ class LogsNotCompleteError(Error):
     pass
 
 
+class WABizAccessError(Error):
+    """Raised when the API is inaccessible with given credentials"""
+    pass
+
+
 class WABizAuthError(Error):
     """Raised when the authentication token used is invalid"""
+    pass
+
+
+class WABizGeneralError(Error):
+    """Raised when the API returns an unhandled error response"""
     pass
 
 

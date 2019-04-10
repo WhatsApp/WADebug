@@ -49,3 +49,7 @@ from wadebug.wa_actions.implementations.check_db_settings_exist import (  # noqa
 from wadebug.wa_actions.implementations.check_webapp_port import (  # noqa: F401
     CheckWebappPortAction,
 )
+
+from wadebug.wa_actions.implementations.check_webhook import (  # noqa: F401
+    CheckWebhookAction
+)

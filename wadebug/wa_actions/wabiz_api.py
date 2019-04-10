@@ -24,6 +24,7 @@ import requests
 class WABizAPI:
     LOGIN_USER_ENDPOINT = '/v1/users/login'
     SUPPORT_INFO_ENDPOINT = '/v1/support'
+    APP_SETTINGS_ENDPOINT = '/v1/settings/application'
 
     def __init__(self, **kwargs):
         baseUrl = kwargs.get('baseUrl')
@@ -60,7 +61,7 @@ class WABizAPI:
             res = res.json()
         except requests.exceptions.RequestException as e:
             raise exceptions.WABizNetworkError(
-                'Network request error. Please check your configuration. (wadebug.conf.yml in current directory)'
+                'Network request error. Please check your configuration (wadebug.conf.yml in current directory).'
                 '\nDetails:{}'.format(e)
             )
 
@@ -70,10 +71,10 @@ class WABizAPI:
             'CONTENT_TYPE': 'application/json',
         }
 
-    def get_support_info(self):
+    def __get(self, endpoint):
         try:
             res = requests.get(
-                url=urljoin(self.api_baseUrl, self.SUPPORT_INFO_ENDPOINT),
+                url=urljoin(self.api_baseUrl, endpoint),
                 headers=self.api_header,
                 verify=False,  # disable ssl verification
             )
@@ -83,13 +84,35 @@ class WABizAPI:
                     'API authentication error.  Please check your configuration.'
                 )
 
-            return res.json()
+            res_json = res.json()
+            errors = res_json.get('errors')
+            if errors is not None:
+                err = errors[0]
+                if 'code' in err and err['code'] == 1005:
+                    raise exceptions.WABizAccessError(
+                        'This endpoint ({}) requires Admin role.  Please update the credentials in your '
+                        'configuration (wadebug.conf.yml in current directory).'.format(endpoint)
+                    )
+                else:
+                    raise exceptions.WABizGeneralError(
+                        'The endpoint ({}) returned an errorneous response.'
+                        '\nDetails:{}'.format(endpoint, err['details'])
+                    )
+
+            return res_json
         except requests.exceptions.RequestException as e:
             raise exceptions.WABizNetworkError(
-                'Network request error. Please check your configuration. \nDetails:{}'.format(e)
+                'Network request error. Please check your configuration (wadebug.conf.yml in current directory).'
+                '\nDetails:{}'.format(e)
             )
+
+    def get_support_info(self):
+        return self.__get(self.SUPPORT_INFO_ENDPOINT)
 
     def get_phone_number(self):
         res = self.get_support_info()
-        phone_number = res['support']['debug_info']
-        return phone_number
+        return res['support']['debug_info']
+
+    def get_webhook_url(self):
+        res = self.__get(self.APP_SETTINGS_ENDPOINT)
+        return res['settings']['application']['webhooks']['url']
