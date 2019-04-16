@@ -32,6 +32,15 @@ def print_program_header():
     click.secho('-'*80, bold=True)
 
 
+def print_dev_mode_header():
+    click.secho(
+        'WADebug dev mode enabled. '
+        'You will see full stacktrace when things go wrong',
+        bold=True
+    )
+    print_line_break()
+
+
 def get_result_color(result):
     color_map = {
         results.OK: 'green',

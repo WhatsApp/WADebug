@@ -5,27 +5,27 @@
 
 from wadebug import cli
 
+import os
 import traceback
 
 import pytest
 
 
-def test_cli_should_not_throw(mocker):
+def test_cli_should_not_throw_by_default(mocker):
     mock_exception = Exception('something goes wrong!')
     mocker.patch.object(cli, 'main', side_effect=mock_exception)
-    mocker.patch('wadebug.config.Config._development_mode', False)
 
     try:
         cli.safe_main()
     except Exception:
         pytest.fail(
-            'cli.safe_main should never throw if Config().development_mode == False\n{}'.format(traceback.format_exc()))
+            'cli.safe_main should not throw by default\n{}'.format(traceback.format_exc()))
 
 
 def test_cli_should_throw_in_dev_mode(mocker):
     mock_exception = Exception('something goes wrong!')
     mocker.patch.object(cli, 'main', side_effect=mock_exception)
-    mocker.patch('wadebug.config.Config._development_mode', True)
+    mocker.patch.object(os, 'environ', {'WADEBUG_DEV_MODE': 'True'})
 
     with pytest.raises(Exception):
         cli.safe_main()

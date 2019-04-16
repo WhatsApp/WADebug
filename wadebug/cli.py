@@ -284,6 +284,9 @@ def execute_actions_interactive(actions):
     # this way, if something gets stuck, users can ctrl+c or take other actions
     ui.print_program_header()
 
+    if Config().development_mode:
+        ui.print_dev_mode_header()
+
     result = {}
     problems = []
 

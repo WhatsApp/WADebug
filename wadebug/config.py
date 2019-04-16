@@ -13,6 +13,7 @@ from six import with_metaclass
 
 import pkg_resources
 import yaml
+import os
 
 
 class Singleton(type):
@@ -34,8 +35,6 @@ class Config(with_metaclass(Singleton)):
     SAMPLE_CONFIG_FILE = 'wadebug.conf.yml.SAMPLE'
     CONFIG_FILE = 'wadebug.conf.yml'
 
-    # Change to True to enable easier investigation of wadebug issues
-    _development_mode = False
     _disable_send_data = False
 
     _config_load_error = ConfigLoadError.NONE
@@ -45,6 +44,9 @@ class Config(with_metaclass(Singleton)):
 
     def __init__(self):
         try:
+            self._development_mode = (
+                os.environ.get("WADEBUG_DEV_MODE", "False") == "True"
+            )
             self._config = self._load_config_from_file()
         except yaml.parser.ParserError as e:
             self._config_load_error = ConfigLoadError.CONFIG_INVALID

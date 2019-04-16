@@ -32,6 +32,7 @@ All other dependencies with go into virtualenvs.
 2. After installing tox, run `tox` in the root directory. Tests should run and pass.
 3. Run `source .tox/py3/bin/activate` to enable one of the virtualenvs. Dependencies will be installed automatically.
 4. Run `pip install --editable .` to enable `wadebug` in all directories that would reflect your changes.
+5. Run `wadebug` with environment variable `WADEBUG_DEV_MODE=True` to enable full stacktrace. The variable is set to False by default.
 
 
 # Testing
