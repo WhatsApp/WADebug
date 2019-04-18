@@ -8,18 +8,15 @@ from yaml.parser import ParserError
 
 
 def test_should_not_be_in_dev_mode(mocker):
-    mocker.patch.dict('wadebug.config.Singleton._instances', clear=True)
     assert Config().development_mode is False, 'Config().development_mode should be False before commiting code'
 
 
 def test_network_should_not_be_disabled(mocker):
-    mocker.patch.dict('wadebug.config.Singleton._instances', clear=True)
     assert Config().disable_send_data is False, 'Config().disable_send_data should be False before commiting code'
 
 
 def test_should_return_correct_config(mocker):
     mock_config = {'mock': 'config'}
-    mocker.patch.dict('wadebug.config.Singleton._instances', clear=True)
     mocker.patch('wadebug.config.Config._load_config_from_file', return_value=mock_config)
 
     assert Config().values == mock_config
@@ -28,7 +25,6 @@ def test_should_return_correct_config(mocker):
 
 def test_should_return_config_invalid(mocker):
     mock_exception = ParserError('something goes wrong!')
-    mocker.patch.dict('wadebug.config.Singleton._instances', clear=True)
     mocker.patch('wadebug.config.Config._load_config_from_file', side_effect=mock_exception)
 
     assert Config().load_error == ConfigLoadError.CONFIG_INVALID
@@ -37,7 +33,6 @@ def test_should_return_config_invalid(mocker):
 
 def test_should_return_config_missing(mocker):
     mock_exception = Exception('something goes wrong!')
-    mocker.patch.dict('wadebug.config.Singleton._instances', clear=True)
     mocker.patch('wadebug.config.Config._load_config_from_file', side_effect=mock_exception)
 
     assert Config().load_error == ConfigLoadError.CONFIG_MISSING
