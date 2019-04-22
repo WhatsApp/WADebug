@@ -47,3 +47,8 @@ class WABizGeneralError(Error):
 class WABizNetworkError(Error):
     """Raised when a network connection to Webapp cannot be made"""
     pass
+
+
+class WABizResourceNotFound(Error):
+    """Raised when the requested resource cannot be found"""
+    pass

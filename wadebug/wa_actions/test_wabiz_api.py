@@ -23,11 +23,11 @@ MOCK_INCOMPLETE_CONFIG = {
 
 
 def mocked_requests_post_auth_error(*args, **kwargs):
-    return MockResponse({'errors': [{'details': 'auth_error'}]}, 401)
+    return MockJSONResponse({'errors': [{'details': 'auth_error'}]}, 401)
 
 
 def mocked_requests_post_auth_success(*args, **kwargs):
-    return MockResponse({'users': [{'token': 'fake_token'}]}, 200)
+    return MockJSONResponse({'users': [{'token': 'fake_token'}]}, 200)
 
 
 def mocked_requests_get_support_error(*args, **kwargs):
@@ -35,15 +35,19 @@ def mocked_requests_get_support_error(*args, **kwargs):
 
 
 def mocked_requests_get_support_success(*args, **kwargs):
-    return MockResponse({'support': 'fake_info'}, 200)
+    return MockJSONResponse({'support': 'fake_info'}, 200)
 
 
 def mocked_requests_get_app_settings_error(*args, **kwargs):
-    return MockResponse({'errors': [{'code': 1005}]}, 200)
+    return MockJSONResponse({'errors': [{'code': 1005}]}, 403)
 
 
 def mocked_requests_get_app_settings_success(*args, **kwargs):
-    return MockResponse({'settings': {'application': {'webhooks': {'url': 'fake_url'}}}}, 200)
+    return MockJSONResponse({'settings': {'application': {'webhooks': {'url': 'fake_url'}}}}, 200)
+
+
+def mocked_requests_get_webhook_cert_success(*args, **kwargs):
+    return MockRawResponse(b'valid certificate', 200)
 
 
 def test_should_throw_valueerror_for_wrong_config_input(mocker):
@@ -118,10 +122,46 @@ def test_should_return_webhook_url_if_no_error(mocker):
         pytest.fail(e)
 
 
-class MockResponse:
+def test_should_return_cert_if_no_error(mocker):
+    expected_webhook_cert = b'valid certificate'
+    mocker.patch('requests.post', side_effect=mocked_requests_post_auth_success)
+    mocked_call = mocker.patch('requests.get', side_effect=mocked_requests_get_webhook_cert_success)
+
+    try:
+        client = WABizAPI(**MOCK_COMPLETE_CONFIG)
+        webhook_cert = client.get_webhook_cert()
+        assert mocked_call.call_count == 1
+        assert webhook_cert == expected_webhook_cert
+    except Exception as e:
+        pytest.fail(e)
+
+
+def test_should_return_none_if_no_cert(mocker):
+    mocker.patch('requests.post', side_effect=mocked_requests_post_auth_success)
+    mocked_call = mocker.patch('requests.get', side_effect=exceptions.WABizResourceNotFound)
+
+    try:
+        client = WABizAPI(**MOCK_COMPLETE_CONFIG)
+        webhook_cert = client.get_webhook_cert()
+        assert mocked_call.call_count == 1
+        assert webhook_cert is None
+    except Exception as e:
+        pytest.fail(e)
+
+
+class MockJSONResponse:
     def __init__(self, json_data, status_code):
         self.json_data = json_data
         self.status_code = status_code
 
     def json(self):
         return self.json_data
+
+
+class MockRawResponse:
+    def __init__(self, raw_data, status_code):
+        self.content = raw_data
+        self.status_code = status_code
+
+    def json(self):
+        raise ValueError

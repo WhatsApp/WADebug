@@ -10,6 +10,7 @@ from __future__ import unicode_literals
 from datetime import datetime
 from datetime import timedelta
 from enum import Enum
+from six import BytesIO
 
 import tempfile
 import tarfile
@@ -25,6 +26,7 @@ EXPIRED_DATE_FORMAT = '%Y-%m-%d'
 LIFETIME_OF_BETA_BUILD_IN_DAYS = 45
 LIFETIME_OF_BUILD_IN_DAYS = 180
 MAX_LINE_OF_LOGS = 10000
+TEMP_TAR_FILENAME = 'temp.tar'
 
 
 def get_all_containers():
@@ -88,6 +90,19 @@ def untar_file(tardata, file_name):
         result = f.read()
         f.close()
     return result
+
+
+def put_archive_to_container(container, src, dest):
+    with tempfile.NamedTemporaryFile() as temptar:  # tempfile backed tarfile
+        file_data = open(src, 'rb').read()
+        tar_file = tarfile.open(fileobj=temptar, mode='w')
+        tarinfo = tarfile.TarInfo(name=os.path.basename(src))
+        tarinfo.size = os.stat(src).st_size
+        tar_file.addfile(tarinfo, BytesIO(file_data))
+        tar_file.close()
+        temptar.flush()
+        temptar.seek(0)
+        container.put_archive(dest, temptar.read())
 
 
 def write_to_file_in_binary(path, content):

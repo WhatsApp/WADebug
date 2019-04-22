@@ -9,14 +9,20 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from wadebug.exceptions import WABizAccessError, WABizAuthError, WABizGeneralError, WABizNetworkError
+from wadebug.wa_actions import docker_utils
+from wadebug.wa_actions import network_utils
+from wadebug.wa_actions.network_utils import CURLTestResult
 from wadebug.wa_actions.base import WAAction
 from wadebug.wa_actions.wabiz_api import WABizAPI
 from wadebug import results
 
-import requests
+import tempfile
+import os
 
 REQ_TIMEOUT = 5
 ACCEPTABLE_RESPONSE_TIME = 3
+
+DEST_PATH = '/usr/local/waent'
 
 
 class CheckWebhookAction(WAAction):
@@ -32,30 +38,50 @@ class CheckWebhookAction(WAAction):
             webhook_url = api.get_webhook_url()
             if not webhook_url:
                 return _result_webhook_not_set(cls)
+            if not webhook_url.startswith('https'):
+                return _result_webhook_not_https(cls)
         except (WABizAccessError, WABizAuthError, WABizNetworkError, ValueError) as e:
             return _result_get_webhook_error(cls, e)
         # explicitly catching a possible exception
         except WABizGeneralError as e:
             # rethrowing as WABizGeneralError is likely not a user error, should be handled by app-wide catch
             raise e
-        else:
-            try:
-                status_code, response_time = test_webhook_health(webhook_url)
-            except requests.exceptions.ReadTimeout:
-                return _result_webhook_did_not_respond(cls)
-            except requests.exceptions.ConnectionError:
-                return _result_webhook_could_not_connect(cls)
-            else:
-                if status_code != 200:
-                    return _result_webhook_did_not_return_ok(cls, status_code)
-                elif (response_time > ACCEPTABLE_RESPONSE_TIME):
-                    return _result_webhook_slow_response(cls, response_time)
-                return results.OK(cls)
 
+        wacore_containers = docker_utils.get_running_wacore_containers()
 
-def test_webhook_health(webhook_url):
-    res = requests.post(webhook_url, timeout=REQ_TIMEOUT, verify=False)
-    return res.status_code, res.elapsed.total_seconds()
+        if not wacore_containers:
+            return results.Problem(
+                cls, 'Webhook check failed',
+                'There is no wacore container running',
+                'Please check results from other actions to diagnose'
+            )
+
+        container = wacore_containers[0]
+        cert_str = api.get_webhook_cert()
+        dest_cert = None
+        if cert_str:
+            with tempfile.NamedTemporaryFile() as cert_file:
+                cert_file.write(cert_str)
+                cert_file.seek(0)
+                docker_utils.put_archive_to_container(container, cert_file.name, DEST_PATH)
+                dest_cert = os.path.join(DEST_PATH, os.path.basename(cert_file.name))
+
+        result, response_time = network_utils.curl_test_url_from_container(
+            container, webhook_url, REQ_TIMEOUT, dest_cert,
+        )
+
+        if result == CURLTestResult.CONNECTION_ERROR:
+            return _result_webhook_could_not_connect(cls)
+        elif result == CURLTestResult.SSL_CERT_UNKNOWN:
+            return _result_webhook_no_cert_uploaded(cls)
+        elif result == CURLTestResult.CONNECTION_TIMEOUT:
+            return _result_webhook_did_not_respond(cls)
+        elif result == CURLTestResult.HTTP_STATUS_NOT_OK:
+            return _result_webhook_did_not_return_ok(cls)
+        elif response_time > ACCEPTABLE_RESPONSE_TIME:
+            return _result_webhook_slow_response(cls, response_time)
+
+        return results.OK(cls)
 
 
 def _result_webhook_not_set(cls):
@@ -65,16 +91,22 @@ def _result_webhook_not_set(cls):
     )
 
 
+def _result_webhook_not_https(cls):
+    return results.Problem(
+        cls, 'Webhook not secure', 'Webhook is not using https',
+        'Please set a webhook endpoint that is https enabled', ''
+    )
+
+
+def _result_webhook_no_cert_uploaded(cls):
+    return results.Problem(
+        cls, 'SSL verification error', 'Unable to connect securely to the webhook',
+        'Please upload self signed cert (and restart coreapp) or use a publicly known cert', ''
+    )
+
+
 def _result_get_webhook_error(cls, exception):
     results.Problem(cls, 'Unable to check webhook', str(exception), '')
-
-
-def _result_webhook_did_not_respond(cls):
-    return results.Problem(
-        cls, 'Webhook unresponsive', 'Webhook did not respond within {} seconds'.format(REQ_TIMEOUT),
-        'Please ensure you are returning 200 OK from your webhook handler as soon as possible.  '
-        'If processing is needed, we recommend returning 200 OK and doing processing later.'
-    )
 
 
 def _result_webhook_could_not_connect(cls):
@@ -85,9 +117,17 @@ def _result_webhook_could_not_connect(cls):
     )
 
 
-def _result_webhook_did_not_return_ok(cls, status_code):
+def _result_webhook_did_not_respond(cls):
     return results.Problem(
-        cls, 'Webhook did not return 200 OK', 'Webhook returned status code of {}'.format(status_code),
+        cls, 'Webhook unresponsive', 'Webhook did not respond within {} seconds'.format(REQ_TIMEOUT),
+        'Please ensure you are returning 200 OK from your webhook handler as soon as possible.  '
+        'If processing is needed, we recommend returning 200 OK and doing processing later.'
+    )
+
+
+def _result_webhook_did_not_return_ok(cls):
+    return results.Problem(
+        cls, 'Unexpected webhook response', 'Webhook did not return 200 OK',
         'Please ensure your webhook handler returns 200 OK'
     )
 

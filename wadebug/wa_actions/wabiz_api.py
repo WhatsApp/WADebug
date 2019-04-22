@@ -25,6 +25,7 @@ class WABizAPI:
     LOGIN_USER_ENDPOINT = '/v1/users/login'
     SUPPORT_INFO_ENDPOINT = '/v1/support'
     APP_SETTINGS_ENDPOINT = '/v1/settings/application'
+    WEBHOOK_CERTS_ENDPOINT = '/v1/certificates/webhooks/ca'
 
     def __init__(self, **kwargs):
         baseUrl = kwargs.get('baseUrl')
@@ -85,19 +86,8 @@ class WABizAPI:
                 )
 
             res_json = res.json()
-            errors = res_json.get('errors')
-            if errors is not None:
-                err = errors[0]
-                if 'code' in err and err['code'] == 1005:
-                    raise exceptions.WABizAccessError(
-                        'This endpoint ({}) requires Admin role.  Please update the credentials in your '
-                        'configuration (wadebug.conf.yml in current directory).'.format(endpoint)
-                    )
-                else:
-                    raise exceptions.WABizGeneralError(
-                        'The endpoint ({}) returned an errorneous response.'
-                        '\nDetails:{}'.format(endpoint, err['details'])
-                    )
+            if res.status_code < 200 or res.status_code > 299:
+                self.__checkForErrors(res_json, endpoint)
 
             return res_json
         except requests.exceptions.RequestException as e:
@@ -105,6 +95,45 @@ class WABizAPI:
                 'Network request error. Please check your configuration (wadebug.conf.yml in current directory).'
                 '\nDetails:{}'.format(e)
             )
+
+    def __get_raw(self, endpoint):
+        res = requests.get(
+            url=urljoin(self.api_baseUrl, endpoint),
+            headers=self.api_header,
+            verify=False,  # disable ssl verification
+        )
+
+        if res.status_code == 401:
+            raise exceptions.WABizAuthError(
+                'API authentication error.  Please check your configuration.'
+            )
+
+        if res.status_code < 200 or res.status_code > 299:
+            res_json = res.json()
+            self.__checkForErrors(res_json, endpoint)
+
+        # res.status = 200 OK
+        return res.content
+
+    def __checkForErrors(self, res_json, src_endpoint):
+        errors = res_json.get('errors')
+        if errors is not None:
+            err = errors[0]
+            if 'code' in err and err['code'] == 1005:
+                raise exceptions.WABizAccessError(
+                    'This endpoint ({}) requires Admin role.  Please update the credentials in your '
+                    'configuration (wadebug.conf.yml in current directory).'.format(src_endpoint)
+                )
+            elif 'code' in err and err['code'] == 1006:
+                raise exceptions.WABizResourceNotFound(
+                    'The requested resource at endpoint ({}) could not be found.'
+                    '\nDetails:{}'.format(src_endpoint, err['details'])
+                )
+            else:
+                raise exceptions.WABizGeneralError(
+                    'The endpoint ({}) returned an errorneous response.'
+                    '\nDetails:{}'.format(src_endpoint, err['details'])
+                )
 
     def get_support_info(self):
         return self.__get(self.SUPPORT_INFO_ENDPOINT)
@@ -116,3 +145,9 @@ class WABizAPI:
     def get_webhook_url(self):
         res = self.__get(self.APP_SETTINGS_ENDPOINT)
         return res['settings']['application']['webhooks']['url']
+
+    def get_webhook_cert(self):
+        try:
+            return self.__get_raw(self.WEBHOOK_CERTS_ENDPOINT)
+        except exceptions.WABizResourceNotFound:
+            return None
