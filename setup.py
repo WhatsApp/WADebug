@@ -26,7 +26,7 @@ setup(
     name='wadebug',
     long_description=open('README.md', 'r').read(),
     long_description_content_type='text/markdown',
-    version='0.1.2',
+    version='0.1.3',
     url='https://developers.facebook.com/docs/whatsapp/guides/wadebug',
     license='MIT',
     author='Thiago Moraes',
