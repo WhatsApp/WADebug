@@ -6,8 +6,8 @@
 from wadebug.exceptions import WABizAccessError
 from wadebug import results
 from wadebug.wa_actions.implementations import check_webhook
-from wadebug.wa_actions.implementations.check_webhook import docker_utils, network_utils
-from wadebug.wa_actions.network_utils import CURLTestResult
+from wadebug.wa_actions.implementations.check_webhook import docker_utils, curl_utils
+from wadebug.wa_actions.curl_utils import CURLTestResult
 
 MOCK_COMPLETE_CONFIG = {
     'webapp': {
@@ -58,8 +58,8 @@ def test_should_return_problem_if_read_timeout(mocker):
         return_value=[MockContainer()]
     )
     mocker.patch.object(
-        network_utils,
-        'curl_test_url_from_container',
+        curl_utils,
+        'https_get_request_from_container',
         return_value=(CURLTestResult.CONNECTION_TIMEOUT, None)
     )
     mocker.patch.object(results, 'Problem', autospec=True)
@@ -78,8 +78,8 @@ def test_should_return_problem_if_connection_error(mocker):
         return_value=[MockContainer()]
     )
     mocker.patch.object(
-        network_utils,
-        'curl_test_url_from_container',
+        curl_utils,
+        'https_get_request_from_container',
         return_value=(CURLTestResult.CONNECTION_ERROR, None)
     )
     mocker.patch.object(results, 'Problem', autospec=True)
@@ -98,8 +98,8 @@ def test_should_return_problem_if_non_200_status_code(mocker):
         return_value=[MockContainer()]
     )
     mocker.patch.object(
-        network_utils,
-        'curl_test_url_from_container',
+        curl_utils,
+        'https_get_request_from_container',
         return_value=(CURLTestResult.HTTP_STATUS_NOT_OK, None)
     )
     mocker.patch.object(results, 'Problem', autospec=True)
@@ -118,8 +118,8 @@ def test_should_return_problem_if_warning_if_webhook_response_slow(mocker):
         return_value=[MockContainer()]
     )
     mocker.patch.object(
-        network_utils,
-        'curl_test_url_from_container',
+        curl_utils,
+        'https_get_request_from_container',
         return_value=(CURLTestResult.OK, check_webhook.ACCEPTABLE_RESPONSE_TIME + 1)
     )
     mocker.patch.object(results, 'Warning', autospec=True)

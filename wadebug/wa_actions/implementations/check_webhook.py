@@ -10,8 +10,8 @@ from __future__ import unicode_literals
 
 from wadebug.exceptions import WABizAccessError, WABizAuthError, WABizGeneralError, WABizNetworkError
 from wadebug.wa_actions import docker_utils
-from wadebug.wa_actions import network_utils
-from wadebug.wa_actions.network_utils import CURLTestResult
+from wadebug.wa_actions import curl_utils
+from wadebug.wa_actions.curl_utils import CURLTestResult
 from wadebug.wa_actions.base import WAAction
 from wadebug.wa_actions.wabiz_api import WABizAPI
 from wadebug import results
@@ -66,7 +66,7 @@ class CheckWebhookAction(WAAction):
                 docker_utils.put_archive_to_container(container, cert_file.name, DEST_PATH)
                 dest_cert = os.path.join(DEST_PATH, os.path.basename(cert_file.name))
 
-        result, response_time = network_utils.curl_test_url_from_container(
+        result, response_time = curl_utils.https_get_request_from_container(
             container, webhook_url, REQ_TIMEOUT, dest_cert,
         )
 
