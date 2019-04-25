@@ -59,7 +59,7 @@ def test_should_return_problem_if_read_timeout(mocker):
     )
     mocker.patch.object(
         curl_utils,
-        'https_get_request_from_container',
+        'https_post_request_from_container',
         return_value=(CURLTestResult.CONNECTION_TIMEOUT, None)
     )
     mocker.patch.object(results, 'Problem', autospec=True)
@@ -79,7 +79,7 @@ def test_should_return_problem_if_connection_error(mocker):
     )
     mocker.patch.object(
         curl_utils,
-        'https_get_request_from_container',
+        'https_post_request_from_container',
         return_value=(CURLTestResult.CONNECTION_ERROR, None)
     )
     mocker.patch.object(results, 'Problem', autospec=True)
@@ -99,7 +99,7 @@ def test_should_return_problem_if_non_200_status_code(mocker):
     )
     mocker.patch.object(
         curl_utils,
-        'https_get_request_from_container',
+        'https_post_request_from_container',
         return_value=(CURLTestResult.HTTP_STATUS_NOT_OK, None)
     )
     mocker.patch.object(results, 'Problem', autospec=True)
@@ -119,7 +119,7 @@ def test_should_return_problem_if_warning_if_webhook_response_slow(mocker):
     )
     mocker.patch.object(
         curl_utils,
-        'https_get_request_from_container',
+        'https_post_request_from_container',
         return_value=(CURLTestResult.OK, check_webhook.ACCEPTABLE_RESPONSE_TIME + 1)
     )
     mocker.patch.object(results, 'Warning', autospec=True)

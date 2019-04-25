@@ -22,6 +22,7 @@ import os
 REQ_TIMEOUT = 5
 ACCEPTABLE_RESPONSE_TIME = 3
 
+TEST_POST_DATA_STRING = '{"wadebug_webhook_test":"test"}'
 DEST_PATH = '/usr/local/waent'
 
 
@@ -66,8 +67,8 @@ class CheckWebhookAction(WAAction):
                 docker_utils.put_archive_to_container(container, cert_file.name, DEST_PATH)
                 dest_cert = os.path.join(DEST_PATH, os.path.basename(cert_file.name))
 
-        result, response_time = curl_utils.https_get_request_from_container(
-            container, webhook_url, REQ_TIMEOUT, dest_cert,
+        result, response_time = curl_utils.https_post_request_from_container(
+            container, webhook_url, TEST_POST_DATA_STRING, REQ_TIMEOUT, dest_cert,
         )
 
         if result == CURLTestResult.CONNECTION_ERROR:
