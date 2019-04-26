@@ -36,10 +36,8 @@ class MySQLUtil:
 
     def get_mysql_version(self):
         connection = self.create_connection()
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT version()")
-                result = cursor.fetchone()
-                return result['version()']
-        finally:
-            connection.close()
+        with connection:
+            cursor = connection.cursor()
+            cursor.execute("SELECT version()")
+            result = cursor.fetchone()
+            return result['version()']
