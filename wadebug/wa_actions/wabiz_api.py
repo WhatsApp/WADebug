@@ -57,14 +57,16 @@ class WABizAPI:
             )
             if res.status_code == 401:
                 raise exceptions.WABizAuthError(
-                    "API authentication error.  Please check your configuration file (wadebug.conf.yml "
+                    "API authentication error.  Please check your "
+                    "configuration file (wadebug.conf.yml "
                     "in current directory)."
                 )
 
             res = res.json()
         except requests.exceptions.RequestException as e:
             raise exceptions.WABizNetworkError(
-                "Network request error. Please check your configuration (wadebug.conf.yml in current directory)."
+                "Network request error. Please check your "
+                "configuration (wadebug.conf.yml in current directory)."
                 "\nDetails:{}".format(e)
             )
 
@@ -94,7 +96,8 @@ class WABizAPI:
             return res_json
         except requests.exceptions.RequestException as e:
             raise exceptions.WABizNetworkError(
-                "Network request error. Please check your configuration (wadebug.conf.yml in current directory)."
+                "Network request error. Please check your "
+                "configuration (wadebug.conf.yml in current directory)."
                 "\nDetails:{}".format(e)
             )
 
@@ -123,7 +126,8 @@ class WABizAPI:
             err = errors[0]
             if "code" in err and err["code"] == 1005:
                 raise exceptions.WABizAccessError(
-                    "This endpoint ({}) requires Admin role.  Please update the credentials in your "
+                    "This endpoint ({}) requires Admin role. "
+                    "Please update the credentials in your "
                     "configuration (wadebug.conf.yml in current directory).".format(
                         src_endpoint
                     )

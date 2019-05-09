@@ -22,6 +22,7 @@ def wadebug_error(cls, exception, trace):
         cls,
         "An unexpected error occurred on this check",
         exception,
-        "Please report this via Direct Support (https://business.facebook.com/direct-support)",
+        "Please report this via Direct Support "
+        "(https://business.facebook.com/direct-support)",
         traceback=trace,
     )

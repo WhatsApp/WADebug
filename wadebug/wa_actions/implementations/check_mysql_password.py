@@ -30,9 +30,8 @@ class CheckMySQLPassword(WAAction):
 
         if set(INVALID_CHARACTERS) & set(password):
             errors.append(
-                "Please make sure mysql password do not have any special characters from {}".format(
-                    INVALID_CHARACTERS
-                )
+                "Please make sure mysql password do not have "
+                "any special characters from {}".format(INVALID_CHARACTERS)
             )
 
         if errors:

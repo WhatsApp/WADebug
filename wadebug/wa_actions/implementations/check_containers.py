@@ -54,9 +54,7 @@ class CheckContainersAreUp(WAAction):
         for key, value in running_wa_containers.items():
             if len(value) != 2:
                 errors.append(
-                    "Either web container or core container missing for version {}".format(
-                        key
-                    )
+                    "Either web or core container is missing for version {}".format(key)
                 )
             elif len(value[docker_utils.WA_COREAPP_CONTAINER_TAG]) != len(
                 value[docker_utils.WA_WEBAPP_CONTAINER_TAG]

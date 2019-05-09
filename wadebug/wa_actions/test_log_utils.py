@@ -53,9 +53,8 @@ def test_should_return_filepath_string_if_get_container_inspect_logs_has_no_exce
         inspect_log_filepath = log_utils.get_container_inspect_logs(mock_container)
     except Exception as e:
         pytest.fail(
-            "Unexpected Exception from log_utils.get_container_inspect_logs: \n {}".format(
-                e
-            )
+            "Unexpected Exception from log_utils."
+            "get_container_inspect_logs: \n {}".format(e)
         )
     assert inspect_log_filepath == expected_inspect_log_filepath
 
@@ -78,9 +77,8 @@ def test_should_return_filepath_string_if_get_corecontainer_coredumps_logs_has_n
         )
     except Exception as e:
         pytest.fail(
-            "Unexpected Exception from log_utils.get_corecontainer_coredumps_logs: \n {}".format(
-                e
-            )
+            "Unexpected Exception from log_utils."
+            "get_corecontainer_coredumps_logs: \n {}".format(e)
         )
     assert coredump_log_filepath == expected_coredump_log_filepath
 
@@ -97,9 +95,8 @@ def test_should_return_none_if_get_corecontainer_coredumps_logs_on_not_core_cont
     # should not run any code to pull logs if the container is not the core container
     except Exception as e:
         pytest.fail(
-            "Unexpected Exception from log_utils.get_corecontainer_coredumps_logs: \n {}".format(
-                e
-            )
+            "Unexpected Exception from log_utils."
+            "get_corecontainer_coredumps_logs: \n {}".format(e)
         )
     assert result is None
 

@@ -41,8 +41,8 @@ def register_class(target_class):
 class MetaRegistry(type):
     """Metaclass to store WAActions when instantiating. """
 
-    def __new__(meta, name, bases, class_dict):
-        cls = type.__new__(meta, name, bases, class_dict)
+    def __new__(metacls, name, bases, class_dict):
+        cls = type.__new__(metacls, name, bases, class_dict)
         if name != "WAAction" and name not in registry:
             register_class(cls)
         return cls
@@ -89,7 +89,7 @@ def get_all_actions():
     )
 
     blacklisted_actions = set(
-        [DummyOKAction, DummyProblemAction, DummyWADebugErrorAction]
+        DummyOKAction, DummyProblemAction, DummyWADebugErrorAction
     )
     ret = [v for v in registry.values() if v not in blacklisted_actions]
     return ret

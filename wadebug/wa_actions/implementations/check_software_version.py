@@ -62,8 +62,8 @@ class CheckSoftwareVersion(WAAction):
                             )
                         )
                 elif days_delta < 7:
-                    warnings_str = "{}: Current version of your software ({}) is expiring on {} UTC, "
-                    "please consider upgrading soon"
+                    warnings_str = "{}: Current version of your software ({}) "
+                    "is expiring on {} UTC, please consider upgrading soon"
                     for container in containers:
                         warnings.append(
                             warnings_str.format(
@@ -74,7 +74,9 @@ class CheckSoftwareVersion(WAAction):
                         )
             except KeyError:
                 valid_version = False
-                error_str = "{}: Current version of your container ({}) is not supported anymore or "
+                error_str = (
+                    "{}: Current version of your container ({}) is deprecated or "
+                )
                 "wadebug tool is not up-to-date"
                 for container in containers:
                     errors.append(error_str.format(container.name, version[1]))
@@ -106,7 +108,8 @@ class CheckSoftwareVersion(WAAction):
 
             return results.Problem(
                 cls,
-                "Some of your WhatsApp container versions are expired or there is mismatch between versions"
+                "Some of your WhatsApp container versions are expired "
+                "or there is mismatch between versions"
                 " of coreapp and webapp",
                 "{}\n{}".format(
                     "\n".join([error_str.format(e) for e in errors]),

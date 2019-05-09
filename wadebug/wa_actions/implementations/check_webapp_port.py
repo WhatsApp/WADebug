@@ -47,7 +47,6 @@ class CheckWebappPortAction(WAAction):
             "Port {} inside the webapp container needs to be mapped to host".format(
                 WEBAPP_PRIVATE_PORT
             ),
-            'Please start the waweb container with port binding: \nports:\n\t- [Public Port]:{}"'.format(
-                WEBAPP_PRIVATE_PORT
-            ),
+            "Please start the waweb container with port binding: "
+            '\nports:\n\t- [Public Port]:{}"'.format(WEBAPP_PRIVATE_PORT),
         )

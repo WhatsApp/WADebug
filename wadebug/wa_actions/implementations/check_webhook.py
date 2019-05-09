@@ -46,7 +46,8 @@ class CheckWebhookAction(WAAction):
             return _result_get_webhook_error(cls, e)
         # explicitly catching a possible exception
         except WABizGeneralError as e:
-            # rethrowing as WABizGeneralError is likely not a user error, should be handled by app-wide catch
+            # WABizGeneralError is likely not a user error,
+            # should be handled by app-wide catch
             raise e
 
         wacore_containers = docker_utils.get_running_wacore_containers()
@@ -94,7 +95,8 @@ def _result_webhook_not_set(cls):
         cls,
         "Unable to check webhook",
         "Webhook has not been set",
-        "Set up webhook via App Settings https://developers.facebook.com/docs/whatsapp/api/settings/app",
+        "Set up webhook via App Settings "
+        "https://developers.facebook.com/docs/whatsapp/api/settings/app",
         "",
     )
 
@@ -114,7 +116,8 @@ def _result_webhook_no_cert_uploaded(cls):
         cls,
         "SSL verification error",
         "Unable to connect securely to the webhook",
-        "Please upload self signed cert (and restart coreapp) or use a publicly known cert",
+        "Please upload self-signed cert (and restart coreapp) "
+        "or use a publicly known cert",
         "",
     )
 
@@ -138,8 +141,10 @@ def _result_webhook_did_not_respond(cls):
         cls,
         "Webhook unresponsive",
         "Webhook did not respond within {} seconds".format(REQ_TIMEOUT),
-        "Please ensure you are returning 200 OK from your webhook handler as soon as possible.  "
-        "If processing is needed, we recommend returning 200 OK and doing processing later.",
+        "Please ensure you are returning 200 OK "
+        "from your webhook handler as soon as possible."
+        "If processing is needed, we recommend returning 200 OK "
+        "and doing processing later.",
     )
 
 
@@ -157,5 +162,6 @@ def _result_webhook_slow_response(cls, response_time):
         cls,
         "Slow webhook response",
         "Webhook responded in {} seconds".format(response_time),
-        "Please ensure you are returning 200 OK from your webhook handler as soon as possible",
+        "Please ensure you are returning 200 OK "
+        "from your webhook handler as soon as possible",
     )

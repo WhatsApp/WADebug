@@ -30,7 +30,8 @@ def safe_main():
         is_outdated, latest_version = check_outdated("wadebug", current_version)
         if is_outdated:
             click.secho(
-                "The current version of wadebug ({}) is out of date.  Run `pip3 install wadebug --upgrade` "
+                "The current version of wadebug ({}) is out of date. "
+                "Run `pip3 install wadebug --upgrade` "
                 "to upgrade to the latest version ({})\n".format(
                     current_version, latest_version
                 ),
@@ -48,7 +49,8 @@ def safe_main():
 
         print(
             "An error occurred with WADebug:\n{}\n".format(e),
-            "Please report this via Direct Support (https://business.facebook.com/direct-support) ",
+            "Please report this via Direct Support "
+            "(https://business.facebook.com/direct-support) ",
             "and paste this full error message.",
         )
 
@@ -375,8 +377,8 @@ def get_logs_interactive_handlers(send, opt_out, logs_folder):
             click.secho(
                 "Support Info is an important piece of info that helps us understand "
                 "the state of your WhatsApp Business API client. We were not able to "
-                "retrieve it because the configuration file has wrong or missing values.  "
-                "Please double check and then run the logs command again to capture this.",
+                "retrieve it because the config file has wrong or missing values.  "
+                "Please check and run the logs command again to capture this.",
                 fg="yellow",
             )
         # returning _output to keep it consistent with other handle_outputs
