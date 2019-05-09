@@ -3,17 +3,14 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, print_function, unicode_literals
 
+import os
 from enum import Enum
-from six import with_metaclass
 
 import pkg_resources
 import yaml
-import os
+from six import with_metaclass
 
 
 class Singleton(type):
@@ -32,8 +29,8 @@ class ConfigLoadError(Enum):
 
 
 class Config(with_metaclass(Singleton)):
-    SAMPLE_CONFIG_FILE = 'wadebug.conf.yml.SAMPLE'
-    CONFIG_FILE = 'wadebug.conf.yml'
+    SAMPLE_CONFIG_FILE = "wadebug.conf.yml.SAMPLE"
+    CONFIG_FILE = "wadebug.conf.yml"
 
     _disable_send_data = False
 
@@ -55,7 +52,7 @@ class Config(with_metaclass(Singleton)):
             self._config_load_error = ConfigLoadError.CONFIG_MISSING
 
     def _load_config_from_file(self):
-        with open(self.CONFIG_FILE, 'r') as f:
+        with open(self.CONFIG_FILE, "r") as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
         return config
 
@@ -81,8 +78,10 @@ class Config(with_metaclass(Singleton)):
 
     def create_default_config_file(self):
         try:
-            config_file_stream = pkg_resources.resource_string(__name__, self.SAMPLE_CONFIG_FILE)
-            with open(self.CONFIG_FILE, 'wb') as f:
+            config_file_stream = pkg_resources.resource_string(
+                __name__, self.SAMPLE_CONFIG_FILE
+            )
+            with open(self.CONFIG_FILE, "wb") as f:
                 f.write(config_file_stream)
             return True
         except Exception as e:

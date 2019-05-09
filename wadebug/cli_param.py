@@ -3,16 +3,13 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import functools
 
 import click
-
 from wadebug import exceptions
+
 
 """Module to create re-usable CLI parameters for wadebug"""
 
@@ -49,6 +46,7 @@ from wadebug import exceptions
 # on function `my_new_command`, value of `kwargs['json']` is False as it wasn't provided,
 # but code will prioritize value from ctx.obj as it was set
 
+
 class ReusableParam:
     """A click command-line parameter that can be used for multiple click commands."""
 
@@ -60,19 +58,15 @@ class ReusableParam:
 class _WADebugParam(object):
     """Decorator to use click with ReusableParam. Values should always be accessed through ctx.obj and NEVER kwargs."""
 
-    decorator_mapping = {
-        'option': click.option,
-        'argument': click.argument,
-    }
+    decorator_mapping = {"option": click.option, "argument": click.argument}
 
     def __init__(self, reusable_param, param_type):
         self.reusable_param = reusable_param
 
         if param_type not in self.decorator_mapping.keys():
             raise exceptions.InvalidParamType(
-                'param_type {} is invalid. options are {}'.format(
-                    param_type,
-                    self.self.decorator_mapping.keys()
+                "param_type {} is invalid. options are {}".format(
+                    param_type, self.self.decorator_mapping.keys()
                 )
             )
 
@@ -81,10 +75,7 @@ class _WADebugParam(object):
     def __call__(self, func):
         decorator_to_apply = self.decorator_mapping[self.param_type]
 
-        @decorator_to_apply(
-            *self.reusable_param.args,
-            **self.reusable_param.kwargs
-        )
+        @decorator_to_apply(*self.reusable_param.args, **self.reusable_param.kwargs)
         @functools.wraps(func)
         def wrapper(ctx, *args, **kwargs):
             if not ctx.obj:
@@ -99,9 +90,9 @@ class _WADebugParam(object):
 
 class wadebug_option(_WADebugParam):
     def __init__(self, reusable_param):
-        super(wadebug_option, self).__init__(reusable_param, 'option')
+        super(wadebug_option, self).__init__(reusable_param, "option")
 
 
 class wadebug_argument(_WADebugParam):
     def __init__(self, reusable_param):
-        super(wadebug_option, self).__init__(reusable_param, 'argument')
+        super(wadebug_option, self).__init__(reusable_param, "argument")
