@@ -22,7 +22,13 @@ class Analytics:
     API_ENDPOINT = "https://graph.facebook.com/v3.1/wa_debug_logs"
     CLIENT_TOKEN = "260133211267543|a2471a9f36e4eaf6b9b79bb60b7887ee"
     TIMEOUT = 30
-    VERSION = pkg_resources.get_distribution("wadebug").version
+
+    # set VERSION on first import of this class
+    VERSION = "unknown"
+    try:
+        VERSION = pkg_resources.get_distribution("wadebug").version
+    except Exception:
+        pass  # ignore when building from WhatsApp internal build system
 
     @staticmethod
     def send_event(event, data, phone_number=None, files_param=None):

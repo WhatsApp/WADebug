@@ -11,7 +11,6 @@ import sys
 
 import click
 import pkg_resources
-from outdated import check_outdated
 from wadebug import cli_utils, exceptions, results, ui, wa_actions
 from wadebug.cli_param import ReusableParam, wadebug_option
 from wadebug.config import Config, ConfigLoadError
@@ -23,17 +22,32 @@ from wadebug.wa_actions import log_utils
 # http://python-future.org/imports.html#should-i-import-unicode-literals
 click.disable_unicode_literals_warning = True
 
+__VERSION__ = "unknown"
+
+try:
+    __VERSION__ = pkg_resources.get_distribution("wadebug").version
+except Exception:
+    pass  # ignore when building from WhatsApp internal build system
+
 
 def safe_main():
+    if __VERSION__ != "unknown":
+        prompt_upgrade(__VERSION__)
+
+    run()
+
+
+def prompt_upgrade(version):
+    from outdated import check_outdated
+
     try:
-        current_version = pkg_resources.get_distribution("wadebug").version
-        is_outdated, latest_version = check_outdated("wadebug", current_version)
+        is_outdated, latest_version = check_outdated("wadebug", version)
         if is_outdated:
             click.secho(
                 "The current version of wadebug ({}) is out of date. "
                 "Run `pip3 install wadebug --upgrade` "
                 "to upgrade to the latest version ({})\n".format(
-                    current_version, latest_version
+                    version, latest_version
                 ),
                 fg="yellow",
             )
@@ -41,6 +55,8 @@ def safe_main():
         if Config().development_mode:
             raise
 
+
+def run():
     try:
         main()
     except Exception as e:
@@ -76,7 +92,7 @@ json_output = ReusableParam(
 
 @click.group(invoke_without_command=True)
 @click.pass_context
-@click.version_option(pkg_resources.get_distribution("wadebug").version)
+@click.version_option(__VERSION__)
 @wadebug_option(opt_out)
 @wadebug_option(json_output)
 def main(ctx, **kwargs):

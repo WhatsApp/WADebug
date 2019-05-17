@@ -88,9 +88,7 @@ def get_all_actions():
         DummyWADebugErrorAction,
     )
 
-    blacklisted_actions = set(
-        DummyOKAction, DummyProblemAction, DummyWADebugErrorAction
-    )
+    blacklisted_actions = {DummyOKAction, DummyProblemAction, DummyWADebugErrorAction}
     ret = [v for v in registry.values() if v not in blacklisted_actions]
     return ret
 
