@@ -5,62 +5,61 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import unittest
+from unittest.mock import patch
+
 from wadebug import results
 from wadebug.wa_actions.implementations import check_network
 from wadebug.wa_actions.implementations.check_network import docker_utils
 
 
-def test_should_return_problem_if_no_coreapp_running(mocker):
-    mocker.patch.object(docker_utils, "get_running_wacore_containers", return_value=[])
-    mocker.patch.object(results, "Problem", autospec=True)
-
-    check_network.CheckNetworkAction().run(config=None)
-
-    results.Problem.assert_called()
+class MockContainer:
+    pass
 
 
-def test_should_return_warning_if_host_not_reachable_on_default_port(mocker):
-    mocker.patch.object(
+class TestCheckNetwork(unittest.TestCase):
+    @patch.object(docker_utils, "get_running_wacore_containers", return_value=[])
+    @patch.object(results, "Problem", autospec=True)
+    def test_should_return_problem_if_no_coreapp_running(self, *_):
+        check_network.CheckNetworkAction().run(config=None)
+
+        results.Problem.assert_called()
+
+    @patch.object(
         docker_utils, "get_running_wacore_containers", return_value=[MockContainer()]
     )
-    mocker.patch.object(check_network, "is_server_in_warning_state", return_value=True)
-    mocker.patch.object(check_network, "is_server_in_error_state", return_value=False)
-    mocker.patch.object(results, "Warning", autospec=True)
+    @patch.object(check_network, "is_server_in_warning_state", return_value=True)
+    @patch.object(check_network, "is_server_in_error_state", return_value=False)
+    @patch.object(results, "Warning", autospec=True)
+    def test_should_return_warning_if_host_not_reachable_on_default_port(self, *_):
+        check_network.CheckNetworkAction().run(config=None)
 
-    check_network.CheckNetworkAction().run(config=None)
+        results.Warning.assert_called()
 
-    results.Warning.assert_called()
-
-
-def test_should_return_problem_if_at_least_one_host_not_reachable_on_https_port(mocker):
-    mocker.patch.object(
+    @patch.object(
         docker_utils, "get_running_wacore_containers", return_value=[MockContainer()]
     )
-    mocker.patch.object(check_network, "is_server_in_warning_state", return_value=True)
-    mocker.patch.object(
+    @patch.object(check_network, "is_server_in_warning_state", return_value=True)
+    @patch.object(
         check_network,
         "is_server_in_error_state",
         side_effect=[True, False, False, True, False, True],
     )
-    mocker.patch.object(results, "Problem", autospec=True)
+    @patch.object(results, "Problem", autospec=True)
+    def test_should_return_problem_if_at_least_one_host_not_reachable_on_https_port(
+        self, *_
+    ):
+        check_network.CheckNetworkAction().run(config=None)
 
-    check_network.CheckNetworkAction().run(config=None)
+        results.Problem.assert_called()
 
-    results.Problem.assert_called()
-
-
-def test_should_return_Ok_if_all_hosts_reachable(mocker):
-    mocker.patch.object(
+    @patch.object(
         docker_utils, "get_running_wacore_containers", return_value=[MockContainer()]
     )
-    mocker.patch.object(check_network, "is_server_in_warning_state", return_value=False)
-    mocker.patch.object(check_network, "is_server_in_error_state", return_value=False)
-    mocker.patch.object(results, "OK", autospec=True)
+    @patch.object(check_network, "is_server_in_warning_state", return_value=False)
+    @patch.object(check_network, "is_server_in_error_state", return_value=False)
+    @patch.object(results, "OK", autospec=True)
+    def test_should_return_Ok_if_all_hosts_reachable(self, *_):
+        check_network.CheckNetworkAction().run(config=None)
 
-    check_network.CheckNetworkAction().run(config=None)
-
-    results.OK.assert_called()
-
-
-class MockContainer:
-    pass
+        results.OK.assert_called()

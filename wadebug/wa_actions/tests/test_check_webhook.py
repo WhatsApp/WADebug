@@ -5,6 +5,9 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import unittest
+from unittest.mock import patch
+
 from wadebug import results
 from wadebug.exceptions import WABizAccessError
 from wadebug.wa_actions.curl_utils import CURLTestResult
@@ -24,132 +27,111 @@ DUMMY_HTTP_WEBHOOK = "http://dummy_webhook_url.com"
 DUMMY_HTTPS_WEBHOOK = "https://dummy_webhook_url.com"
 
 
-def test_should_return_warning_if_no_webhook_url(mocker):
-    mocker.patch("wadebug.wa_actions.wabiz_api.WABizAPI.__init__", return_value=None)
-    mocker.patch(
-        "wadebug.wa_actions.wabiz_api.WABizAPI.get_webhook_url", return_value=""
-    )
-    mocker.patch.object(results, "Warning", autospec=True)
-
-    check_webhook.CheckWebhookAction().run(config=MOCK_COMPLETE_CONFIG)
-    results.Warning.assert_called()
+class MockContainer:
+    pass
 
 
-def test_should_return_problem_if_webhook_url_not_https(mocker):
-    mocker.patch("wadebug.wa_actions.wabiz_api.WABizAPI.__init__", return_value=None)
-    mocker.patch(
+class TestCheckWebhook(unittest.TestCase):
+    @patch("wadebug.wa_actions.wabiz_api.WABizAPI.__init__", return_value=None)
+    @patch("wadebug.wa_actions.wabiz_api.WABizAPI.get_webhook_url", return_value="")
+    @patch.object(results, "Warning", autospec=True)
+    def test_should_return_warning_if_no_webhook_url(self, *_):
+        check_webhook.CheckWebhookAction().run(config=MOCK_COMPLETE_CONFIG)
+        results.Warning.assert_called()
+
+    @patch("wadebug.wa_actions.wabiz_api.WABizAPI.__init__", return_value=None)
+    @patch(
         "wadebug.wa_actions.wabiz_api.WABizAPI.get_webhook_url",
         return_value=DUMMY_HTTP_WEBHOOK,
     )
-    mocker.patch.object(results, "Problem", autospec=True)
+    @patch.object(results, "Problem", autospec=True)
+    def test_should_return_problem_if_webhook_url_not_https(self, *_):
+        check_webhook.CheckWebhookAction().run(config=MOCK_COMPLETE_CONFIG)
+        results.Problem.assert_called()
 
-    check_webhook.CheckWebhookAction().run(config=MOCK_COMPLETE_CONFIG)
-    results.Problem.assert_called()
-
-
-def test_should_return_problem_if_access_error(mocker):
-    mocker.patch("wadebug.wa_actions.wabiz_api.WABizAPI.__init__", return_value=None)
-    mocker.patch(
+    @patch("wadebug.wa_actions.wabiz_api.WABizAPI.__init__", return_value=None)
+    @patch(
         "wadebug.wa_actions.wabiz_api.WABizAPI.get_webhook_url",
         side_effect=WABizAccessError,
     )
-    mocker.patch.object(results, "Problem", autospec=True)
+    @patch.object(results, "Problem", autospec=True)
+    def test_should_return_problem_if_access_error(self, *_):
+        check_webhook.CheckWebhookAction().run(config=MOCK_COMPLETE_CONFIG)
+        results.Problem.assert_called()
 
-    check_webhook.CheckWebhookAction().run(config=MOCK_COMPLETE_CONFIG)
-    results.Problem.assert_called()
-
-
-def test_should_return_problem_if_read_timeout(mocker):
-    mocker.patch("wadebug.wa_actions.wabiz_api.WABizAPI.__init__", return_value=None)
-    mocker.patch(
+    @patch("wadebug.wa_actions.wabiz_api.WABizAPI.__init__", return_value=None)
+    @patch(
         "wadebug.wa_actions.wabiz_api.WABizAPI.get_webhook_url",
         return_value=DUMMY_HTTPS_WEBHOOK,
     )
-    mocker.patch(
-        "wadebug.wa_actions.wabiz_api.WABizAPI.get_webhook_cert", return_value=None
-    )
-    mocker.patch.object(
+    @patch("wadebug.wa_actions.wabiz_api.WABizAPI.get_webhook_cert", return_value=None)
+    @patch.object(
         docker_utils, "get_running_wacore_containers", return_value=[MockContainer()]
     )
-    mocker.patch.object(
+    @patch.object(
         curl_utils,
         "https_post_request_from_container",
         return_value=(CURLTestResult.CONNECTION_TIMEOUT, None),
     )
-    mocker.patch.object(results, "Problem", autospec=True)
+    @patch.object(results, "Problem", autospec=True)
+    def test_should_return_problem_if_read_timeout(self, *_):
+        check_webhook.CheckWebhookAction().run(config=MOCK_COMPLETE_CONFIG)
+        results.Problem.assert_called()
 
-    check_webhook.CheckWebhookAction().run(config=MOCK_COMPLETE_CONFIG)
-    results.Problem.assert_called()
-
-
-def test_should_return_problem_if_connection_error(mocker):
-    mocker.patch("wadebug.wa_actions.wabiz_api.WABizAPI.__init__", return_value=None)
-    mocker.patch(
+    @patch("wadebug.wa_actions.wabiz_api.WABizAPI.__init__", return_value=None)
+    @patch(
         "wadebug.wa_actions.wabiz_api.WABizAPI.get_webhook_url",
         return_value=DUMMY_HTTPS_WEBHOOK,
     )
-    mocker.patch(
-        "wadebug.wa_actions.wabiz_api.WABizAPI.get_webhook_cert", return_value=None
-    )
-    mocker.patch.object(
+    @patch("wadebug.wa_actions.wabiz_api.WABizAPI.get_webhook_cert", return_value=None)
+    @patch.object(
         docker_utils, "get_running_wacore_containers", return_value=[MockContainer()]
     )
-    mocker.patch.object(
+    @patch.object(
         curl_utils,
         "https_post_request_from_container",
         return_value=(CURLTestResult.CONNECTION_ERROR, None),
     )
-    mocker.patch.object(results, "Problem", autospec=True)
+    @patch.object(results, "Problem", autospec=True)
+    def test_should_return_problem_if_connection_error(self, *_):
 
-    check_webhook.CheckWebhookAction().run(config=MOCK_COMPLETE_CONFIG)
-    results.Problem.assert_called()
+        check_webhook.CheckWebhookAction().run(config=MOCK_COMPLETE_CONFIG)
+        results.Problem.assert_called()
 
-
-def test_should_return_problem_if_non_200_status_code(mocker):
-    mocker.patch("wadebug.wa_actions.wabiz_api.WABizAPI.__init__", return_value=None)
-    mocker.patch(
+    @patch("wadebug.wa_actions.wabiz_api.WABizAPI.__init__", return_value=None)
+    @patch(
         "wadebug.wa_actions.wabiz_api.WABizAPI.get_webhook_url",
         return_value=DUMMY_HTTPS_WEBHOOK,
     )
-    mocker.patch(
-        "wadebug.wa_actions.wabiz_api.WABizAPI.get_webhook_cert", return_value=None
-    )
-    mocker.patch.object(
+    @patch("wadebug.wa_actions.wabiz_api.WABizAPI.get_webhook_cert", return_value=None)
+    @patch.object(
         docker_utils, "get_running_wacore_containers", return_value=[MockContainer()]
     )
-    mocker.patch.object(
+    @patch.object(
         curl_utils,
         "https_post_request_from_container",
         return_value=(CURLTestResult.HTTP_STATUS_NOT_OK, None),
     )
-    mocker.patch.object(results, "Problem", autospec=True)
+    @patch.object(results, "Problem", autospec=True)
+    def test_should_return_problem_if_non_200_status_code(self, *_):
+        check_webhook.CheckWebhookAction().run(config=MOCK_COMPLETE_CONFIG)
+        results.Problem.assert_called()
 
-    check_webhook.CheckWebhookAction().run(config=MOCK_COMPLETE_CONFIG)
-    results.Problem.assert_called()
-
-
-def test_should_return_problem_if_warning_if_webhook_response_slow(mocker):
-    mocker.patch("wadebug.wa_actions.wabiz_api.WABizAPI.__init__", return_value=None)
-    mocker.patch(
+    @patch("wadebug.wa_actions.wabiz_api.WABizAPI.__init__", return_value=None)
+    @patch(
         "wadebug.wa_actions.wabiz_api.WABizAPI.get_webhook_url",
         return_value=DUMMY_HTTPS_WEBHOOK,
     )
-    mocker.patch(
-        "wadebug.wa_actions.wabiz_api.WABizAPI.get_webhook_cert", return_value=None
-    )
-    mocker.patch.object(
+    @patch("wadebug.wa_actions.wabiz_api.WABizAPI.get_webhook_cert", return_value=None)
+    @patch.object(
         docker_utils, "get_running_wacore_containers", return_value=[MockContainer()]
     )
-    mocker.patch.object(
+    @patch.object(
         curl_utils,
         "https_post_request_from_container",
         return_value=(CURLTestResult.OK, check_webhook.ACCEPTABLE_RESPONSE_TIME + 1),
     )
-    mocker.patch.object(results, "Warning", autospec=True)
-
-    check_webhook.CheckWebhookAction().run(config=MOCK_COMPLETE_CONFIG)
-    results.Warning.assert_called()
-
-
-class MockContainer:
-    pass
+    @patch.object(results, "Warning", autospec=True)
+    def test_should_return_problem_if_warning_if_webhook_response_slow(self, *_):
+        check_webhook.CheckWebhookAction().run(config=MOCK_COMPLETE_CONFIG)
+        results.Warning.assert_called()

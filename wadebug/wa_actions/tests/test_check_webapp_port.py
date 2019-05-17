@@ -5,47 +5,46 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import unittest
+from unittest.mock import patch
+
 from wadebug import results
 from wadebug.wa_actions.implementations import check_webapp_port
 from wadebug.wa_actions.implementations.check_webapp_port import docker_utils
 
 
-def test_should_return_problem_if_no_waweb_running(mocker):
-    mocker.patch.object(docker_utils, "get_running_waweb_containers", return_value=[])
-    mocker.patch.object(results, "Problem", autospec=True)
-
-    check_webapp_port.CheckWebappPortAction().run(config=None)
-
-    results.Problem.assert_called()
+class MockContainer:
+    pass
 
 
-def test_should_return_problem_if_no_port_binding_for_443(mocker):
-    mocker.patch.object(
+class TestCheckWebappPort(unittest.TestCase):
+    @patch.object(docker_utils, "get_running_waweb_containers", return_value=[])
+    @patch.object(results, "Problem", autospec=True)
+    def test_should_return_problem_if_no_waweb_running(self, *_):
+        check_webapp_port.CheckWebappPortAction().run(config=None)
+
+        results.Problem.assert_called()
+
+    @patch.object(
         docker_utils, "get_running_waweb_containers", return_value=[MockContainer()]
     )
-    mocker.patch.object(docker_utils, "get_container_port_bindings", return_value={})
-    mocker.patch.object(results, "Problem", autospec=True)
+    @patch.object(docker_utils, "get_container_port_bindings", return_value={})
+    @patch.object(results, "Problem", autospec=True)
+    def test_should_return_problem_if_no_port_binding_for_443(self, *_):
+        check_webapp_port.CheckWebappPortAction().run(config=None)
 
-    check_webapp_port.CheckWebappPortAction().run(config=None)
+        results.Problem.assert_called()
 
-    results.Problem.assert_called()
-
-
-def test_should_return_OK_if_port_443_has_host_binding(mocker):
-    mocker.patch.object(
+    @patch.object(
         docker_utils, "get_running_waweb_containers", return_value=[MockContainer()]
     )
-    mocker.patch.object(
+    @patch.object(
         docker_utils,
         "get_container_port_bindings",
         return_value={"443/tcp": "a valid host binding"},
     )
-    mocker.patch.object(results, "OK", autospec=True)
+    @patch.object(results, "OK", autospec=True)
+    def test_should_return_OK_if_port_443_has_host_binding(self, *_):
+        check_webapp_port.CheckWebappPortAction().run(config=None)
 
-    check_webapp_port.CheckWebappPortAction().run(config=None)
-
-    results.OK.assert_called()
-
-
-class MockContainer:
-    pass
+        results.OK.assert_called()
