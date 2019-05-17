@@ -6,64 +6,55 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import unittest
+from unittest.mock import patch
+
 from wadebug.wa_actions.curl_utils import (
     CURLExitCode,
     CURLTestResult,
-    __exec_request_from_container,
+    https_get_request_from_container,
 )
 
 
-TEST_EXEC_PARAMS = ["test", "params"]
-
-
-def test_request_should_return_non_http_ok_if_status_code_not_200(mocker):
-    def mockreturn(command):
-        return (CURLExitCode.OK, b"404:1")
-
-    mock_container = MockContainer()
-    mocker.patch.object(mock_container, "exec_run", mockreturn)
-    result, response_time = __exec_request_from_container(
-        mock_container, TEST_EXEC_PARAMS
-    )
-    assert result == CURLTestResult.HTTP_STATUS_NOT_OK
-
-
-def test_request_should_return_ok_if_http_200_exit_code_0(mocker):
-    def mockreturn(command):
-        return (CURLExitCode.OK, b"200:1")
-
-    mock_container = MockContainer()
-    mocker.patch.object(mock_container, "exec_run", mockreturn)
-    result, response_time = __exec_request_from_container(
-        mock_container, TEST_EXEC_PARAMS
-    )
-    assert result == CURLTestResult.OK
-
-
-def test_request_should_return_timeout_if_exit_code_28(mocker):
-    def mockreturn(command):
-        return (CURLExitCode.TIMEOUT, b"200:1")
-
-    mock_container = MockContainer()
-    mocker.patch.object(mock_container, "exec_run", mockreturn)
-    result, response_time = __exec_request_from_container(
-        mock_container, TEST_EXEC_PARAMS
-    )
-    assert result == CURLTestResult.CONNECTION_TIMEOUT
-
-
-def test_request_should_return_cert_unknown_if_exit_code_60(mocker):
-    def mockreturn(command):
-        return (CURLExitCode.SSL_CERT_UNKNOWN, b"200:1")
-
-    mock_container = MockContainer()
-    mocker.patch.object(mock_container, "exec_run", mockreturn)
-    result, response_time = __exec_request_from_container(
-        mock_container, TEST_EXEC_PARAMS
-    )
-    assert result == CURLTestResult.SSL_CERT_UNKNOWN
-
-
 class MockContainer:
-    def exec_run():
+    def exec_run(self):
         pass
+
+
+mock_container = MockContainer()
+
+
+class TestCurlUtils(unittest.TestCase):
+    @patch.object(mock_container, "exec_run", return_value=(CURLExitCode.OK, b"404:1"))
+    def test_request_should_return_non_http_ok_if_status_code_not_200(self, *_):
+        result, response_time = https_get_request_from_container(
+            mock_container, "url", "timeout"
+        )
+        assert result == CURLTestResult.HTTP_STATUS_NOT_OK
+
+    @patch.object(mock_container, "exec_run", return_value=(CURLExitCode.OK, b"200:1"))
+    def test_request_should_return_ok_if_http_200_exit_code_0(self, *_):
+        result, response_time = https_get_request_from_container(
+            mock_container, "url", "timeout"
+        )
+        assert result == CURLTestResult.OK
+
+    @patch.object(
+        mock_container, "exec_run", return_value=(CURLExitCode.TIMEOUT, b"200:1")
+    )
+    def test_request_should_return_timeout_if_exit_code_28(self, *_):
+        result, response_time = https_get_request_from_container(
+            mock_container, "url", "timeout"
+        )
+        assert result == CURLTestResult.CONNECTION_TIMEOUT
+
+    @patch.object(
+        mock_container,
+        "exec_run",
+        return_value=(CURLExitCode.SSL_CERT_UNKNOWN, b"200:1"),
+    )
+    def test_request_should_return_cert_unknown_if_exit_code_60(self, *_):
+        result, response_time = https_get_request_from_container(
+            mock_container, "url", "timeout"
+        )
+        assert result == CURLTestResult.SSL_CERT_UNKNOWN

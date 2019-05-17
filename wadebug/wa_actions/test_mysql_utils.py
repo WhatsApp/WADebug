@@ -5,27 +5,29 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import unittest
+
 from wadebug.wa_actions import mysql_utils
 
 
-def test_should_throw_valueerror_for_wrong_config_input(mocker):
-    mock_wrong_config = {"host": "localhost", "port": 443, "user": "admin"}
+class TestMySQLUtils(unittest.TestCase):
+    def test_should_throw_valueerror_for_wrong_config_input(self):
+        mock_wrong_config = {"host": "localhost", "port": 443, "user": "admin"}
 
-    try:
-        mysql_utils.MySQLUtil(**mock_wrong_config)
-    except ValueError:
-        assert True
+        try:
+            mysql_utils.MySQLUtil(**mock_wrong_config)
+        except ValueError:
+            assert True
 
+    def test_should_throw_valueerror_if_cannot_convert_port_to_int(self):
+        mock_wrong_config = {
+            "host": "localhost",
+            "port": "port",
+            "user": "admin",
+            "password": "secret",
+        }
 
-def test_should_throw_valueerror_if_cannot_convert_port_to_int(mocker):
-    mock_wrong_config = {
-        "host": "localhost",
-        "port": "port",
-        "user": "admin",
-        "password": "secret",
-    }
-
-    try:
-        mysql_utils.MySQLUtil(**mock_wrong_config)
-    except ValueError:
-        assert True
+        try:
+            mysql_utils.MySQLUtil(**mock_wrong_config)
+        except ValueError:
+            assert True
