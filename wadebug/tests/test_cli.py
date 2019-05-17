@@ -5,30 +5,36 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import os
 import traceback
+import unittest
+from unittest.mock import patch
 
 import pytest
 from wadebug import cli
 
 
-def test_cli_should_not_throw_by_default(mocker):
-    mock_exception = Exception("something goes wrong!")
-    mocker.patch.object(cli, "main", side_effect=mock_exception)
-
-    try:
-        cli.safe_main()
-    except Exception:
-        pytest.fail(
-            "cli.safe_main should not throw by default\n{}".format(
-                traceback.format_exc()
+class TestCli(unittest.TestCase):
+    @patch("wadebug.cli.main", side_effect=Exception("something goes wrong!"))
+    def test_cli_should_not_throw_by_default(self, mock_main):
+        try:
+            cli.safe_main()
+        except Exception:
+            pytest.fail(
+                "cli.safe_main should not throw by default\n{}".format(
+                    traceback.format_exc()
+                )
             )
-        )
 
-
-def test_cli_should_throw_in_dev_mode(mocker):
-    mock_exception = Exception("something goes wrong!")
-    mocker.patch.object(cli, "main", side_effect=mock_exception)
-    mocker.patch.dict("os.environ", {"WADEBUG_DEV_MODE": "True"})
-
-    with pytest.raises(Exception):
-        cli.safe_main()
+    @patch("wadebug.cli.main", side_effect=Exception("something goes wrong!"))
+    @patch.dict(os.environ, {"WADEBUG_DEV_MODE": "True"})
+    def test_cli_should_throw_in_dev_mode(self, mock_main):
+        try:
+            cli.safe_main()
+            pytest.fail(
+                "cli.safe_main should not throw by default\n{}".format(
+                    traceback.format_exc()
+                )
+            )
+        except Exception:
+            pass
