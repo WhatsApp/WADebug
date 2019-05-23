@@ -6,8 +6,8 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import unittest
-from unittest.mock import patch
 
+from mock import patch
 from wadebug import results
 from wadebug.wa_actions.implementations import check_network
 from wadebug.wa_actions.implementations.check_network import docker_utils

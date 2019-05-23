@@ -20,9 +20,9 @@ dependencies = [
     "PyMySQL",
     "pytest",
     "pytest-cov",
-    "pytest-mock",
     "PyYAML",
     "six",
+    "mock",
 ]
 
 setup(

@@ -8,9 +8,9 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import os
 import traceback
 import unittest
-from unittest.mock import patch
 
 import pytest
+from mock import patch
 from wadebug import cli
 
 

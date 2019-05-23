@@ -7,9 +7,9 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import unittest
 from os import path
-from unittest.mock import patch
 
 import pytest
+from mock import patch
 from wadebug import exceptions
 from wadebug.wa_actions import docker_utils, log_utils
 

@@ -7,8 +7,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import unittest
 from io import BytesIO
-from unittest.mock import patch
 
+from mock import patch
 from wadebug.analytics import Analytics, Events
 
 
