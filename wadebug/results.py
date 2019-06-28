@@ -51,13 +51,8 @@ class _NotOK(Result):
         if Config().development_mode and hasattr(self, "traceback"):
             traceback = "\n\n{}".format(self.traceback)
 
-        return "Name: {}\n\nDescription: {}\n\nDetails: {}\n\n{}\n\n{}{}".format(
-            self.action.__name__,
-            self.action.short_description,
-            self.message,
-            self.details,
-            self.remediation,
-            traceback,
+        return "    {}\n    {}\n    {}\n    {}".format(
+            self.message, self.details, self.remediation, traceback
         )
 
     def __init__(self, action, message, details, remediation, traceback=None):

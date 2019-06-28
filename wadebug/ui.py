@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Copyright (c) Facebook, Inc. and its affiliates.
 
 # This source code is licensed under the MIT license found in the
@@ -14,81 +16,57 @@ from wadebug import results
 table_left_alignment = 63
 table_right_aligment = 17
 
+color_map = {
+    results.OK: "green",
+    results.Warning: "yellow",
+    results.Problem: "red",
+    results.Skipped: "blue",
+    results.WADebugError: "red",
+}
 
-def print_line_break(color=None):
-    click.secho("-" * 80, bold=True, fg=color)
+indicator_icon_map = {
+    results.OK: "✓",
+    results.Warning: "!",
+    results.Problem: "✗",
+    results.Skipped: "-",
+    results.WADebugError: "✗",
+}
 
 
 def print_program_header():
-    click.secho("-" * 80, bold=True)
-    click.secho(
-        "This tool will do some checks on the health " "of WhatsApp Business API setup",
-        bold=True,
-    )
-    click.secho("-" * 80, bold=True)
+    click.secho("WADebug summary: ", bold=True, nl=False)
 
 
 def print_dev_mode_header():
-    click.secho(
-        "WADebug dev mode enabled. "
-        "You will see full stacktrace when things go wrong",
-        bold=True,
-    )
-    print_line_break()
+    click.secho("(DEV mode enabled)")
 
 
-def get_result_color(result):
-    color_map = {
-        results.OK: "green",
-        results.Warning: "yellow",
-        results.Problem: "red",
-        results.Skipped: "blue",
-        results.WADebugError: "red",
-    }
-
-    color = color_map.get(result.__class__)
+def get_result_color(result_type):
+    color = color_map.get(result_type)
     if not color:
         color = "white"
     return color
 
 
-def print_table_result_line(result):
-    click.secho(
-        "{content:<{table_left_alignment}}".format(
-            content=result.action.user_facing_name,
-            table_left_alignment=table_left_alignment,
-        ),
-        nl=False,
-    )
-    color = get_result_color(result)
-    click.secho(
-        "{status:>{table_right_aligment}}".format(
-            status=result.result, table_right_aligment=table_right_aligment
-        ),
-        fg=color,
-    )
+def get_result_indicator_icon(result_type):
+    indicator_icon = indicator_icon_map.get(result_type)
+    if not indicator_icon:
+        indicator_icon = " "
+    return indicator_icon
 
 
-def print_table_header(column_1, column_2):
-    fmt = "{column_1:<{table_left_alignment}}{column_2:>{table_right_aligment}}"
-    click.secho(
-        fmt.format(
-            column_1=column_1,
-            column_2=column_2,
-            table_right_aligment=table_right_aligment,
-            table_left_alignment=table_left_alignment,
-        ),
-        bold=True,
-    )
+def print_result(result):
+    result_type = result.__class__
+    indicator_icon = get_result_indicator_icon(result_type)
+    indicator_color = get_result_color(result_type)
 
+    click.secho("[{}] ".format(indicator_icon), fg=indicator_color, nl=False)
 
-def print_details_header(result):
-    color = get_result_color(result)
-    click.secho("-" * 80, fg=color)
     click.secho(
-        "PROBLEM: Details for {}".format(result.action.user_facing_name), fg=color
+        "{} - {}".format(
+            result.action.user_facing_name, result.action.short_description
+        )
     )
-    click.secho("-" * 80, fg=color)
 
 
 def print_invalid_config_message(config_file_path, ex):
@@ -111,16 +89,3 @@ def print_invalid_config_message(config_file_path, ex):
     )
     click.secho("Exception found:", bold=True)
     click.secho("{parsing_ex}\n".format(parsing_ex=ex))
-
-
-def print_dummy_tests():
-    # Print a list of sample rows to a results table. Used for testing the UI
-    print_table_result_line("Check MySQL - Not Implemented", status="warning")
-    print_table_result_line(
-        "Container can access internet - Not Implemented", status="warning"
-    )
-    print_table_result_line("Get Logs - Not Implemented", status="ok")
-    print_table_result_line("Send a text message - Not Implemented", status="ok")
-    print_table_result_line("Send an HSM - Not Implemented", status="ok")
-    print_table_result_line("Send an image - Not Implemented", status="ok")
-    print_table_result_line("Load Test - Not Implemented", status="problem")

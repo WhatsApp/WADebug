@@ -241,22 +241,13 @@ def debug_json(acts, opt_out):
 
 
 def debug_interactive(acts, opt_out):
-    result, has_problem = execute_actions_interactive(acts)
+    result = execute_actions_interactive(acts)
 
     if not opt_out and not Config().disable_send_data:
         cli_utils.send_results_to_fb(
             result,
             success_callback=send_usage_result_interactive_success,
             failure_callback=send_result_interactive_failure,
-        )
-
-    if has_problem:
-        click.secho(
-            "There is at least one problem detected. "
-            "Please use the results and details provided to troubleshoot. "
-            "Additionally, you can run wadebug logs --send to send "
-            "container logs to WhatsApp for further troubleshooting.",
-            fg="yellow",
         )
 
 
@@ -286,30 +277,26 @@ def execute_actions_interactive(actions):
 
     if Config().development_mode:
         ui.print_dev_mode_header()
+    else:
+        click.echo()
 
     result = {}
     problems = []
-
-    ui.print_table_header("Action", "Result")
 
     for act in actions:
         res = act.run(config)
         result[res.action.user_facing_name] = res.to_dict()
 
-        ui.print_table_result_line(res)
+        ui.print_result(res)
         if isinstance(res, results._NotOK):
+            click.echo(res)
             problems.append(res)
 
     click.echo()
     if problems:
-        ui.print_line_break()
-        click.secho("More details on the investigation:", bold=True)
-        ui.print_line_break()
-        for problem in problems:
-            ui.print_details_header(problem)
-            click.echo(problem)
+        click.echo("! WADebug found {} issues.".format(len(problems)))
 
-    return result, len(problems) > 0
+    return result
 
 
 def load_config_interactive():
