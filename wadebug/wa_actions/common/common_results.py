@@ -12,7 +12,9 @@ def missing_config(cls, missing_configs):
     return results.Skipped(
         cls,
         "This check is skipped",
-        "Unable to read required config values:\n{}".format("\n".join(missing_configs)),
+        "Unable to read required config values:\n{}".format(
+            "\n".join("\t" + config for config in missing_configs)
+        ),
         "Please check these configurations are properly defined in wadebug.conf.yml",
     )
 

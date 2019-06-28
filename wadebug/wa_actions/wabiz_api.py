@@ -67,7 +67,7 @@ class WABizAPI:
             raise exceptions.WABizNetworkError(
                 "Network request error. Please check your "
                 "configuration (wadebug.conf.yml in current directory)."
-                "\nDetails:{}".format(e)
+                "\n{}".format(e)
             )
 
         token = res["users"][0]["token"]
@@ -98,7 +98,7 @@ class WABizAPI:
             raise exceptions.WABizNetworkError(
                 "Network request error. Please check your "
                 "configuration (wadebug.conf.yml in current directory)."
-                "\nDetails:{}".format(e)
+                "\n{}".format(e)
             )
 
     def __get_raw(self, endpoint):
@@ -135,12 +135,12 @@ class WABizAPI:
             elif "code" in err and err["code"] == 1006:
                 raise exceptions.WABizResourceNotFound(
                     "The requested resource at endpoint ({}) could not be found."
-                    "\nDetails:{}".format(src_endpoint, err["details"])
+                    "\n{}".format(src_endpoint, err["details"])
                 )
             else:
                 raise exceptions.WABizGeneralError(
                     "The endpoint ({}) returned an errorneous response."
-                    "\nDetails:{}".format(src_endpoint, err["details"])
+                    "\n{}".format(src_endpoint, err["details"])
                 )
 
     def get_support_info(self):

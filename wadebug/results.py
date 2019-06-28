@@ -46,15 +46,6 @@ class OK(Result):
 class _NotOK(Result):
     """Intermediate class to create cases where something is wrong."""
 
-    def __str__(self):
-        traceback = ""
-        if Config().development_mode and hasattr(self, "traceback"):
-            traceback = "\n\n{}".format(self.traceback)
-
-        return "    {}\n    {}\n    {}\n    {}".format(
-            self.message, self.details, self.remediation, traceback
-        )
-
     def __init__(self, action, message, details, remediation, traceback=None):
         self.action = action
         self.message = message

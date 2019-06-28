@@ -11,6 +11,7 @@ import os
 
 import click
 from wadebug import results
+from wadebug.config import Config
 
 
 table_left_alignment = 63
@@ -41,6 +42,20 @@ def print_dev_mode_header():
     click.secho("(DEV mode enabled)")
 
 
+def print_result_header(result):
+    result_type = result.__class__
+    indicator_icon = get_result_indicator_icon(result_type)
+    indicator_color = get_result_color(result_type)
+
+    click.secho("[{}] ".format(indicator_icon), fg=indicator_color, nl=False)
+
+    click.secho(
+        "{} - {}".format(
+            result.action.user_facing_name, result.action.short_description
+        )
+    )
+
+
 def get_result_color(result_type):
     color = color_map.get(result_type)
     if not color:
@@ -55,18 +70,16 @@ def get_result_indicator_icon(result_type):
     return indicator_icon
 
 
-def print_result(result):
-    result_type = result.__class__
-    indicator_icon = get_result_indicator_icon(result_type)
-    indicator_color = get_result_color(result_type)
+def print_result_details(result):
+    for field in [result.message, result.details, result.remediation]:
+        click.echo(add_indentation_to_result_field(field))
 
-    click.secho("[{}] ".format(indicator_icon), fg=indicator_color, nl=False)
+    if Config().development_mode and hasattr(result, "traceback"):
+        click.echo(add_indentation_to_result_field(result.traceback))
 
-    click.secho(
-        "{} - {}".format(
-            result.action.user_facing_name, result.action.short_description
-        )
-    )
+
+def add_indentation_to_result_field(str):
+    return "\n".join(["    " + line for line in str.split("\n")])
 
 
 def print_invalid_config_message(config_file_path, ex):

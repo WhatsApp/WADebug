@@ -72,8 +72,8 @@ class CheckContainersAreUp(WAAction):
                     )
 
         if errors or stopped_sql_containers:
-            err_str = "Message: {}\n"
-            container_details = "Container - ID: {}, Name: {}, Status: {}"
+            err_str = "{}\n"
+            container_details = "\tContainer - ID: {}, Name: {}, Status: {}"
             stopped_containers.extend(stopped_sql_containers)
             return results.Problem(
                 cls,
@@ -93,7 +93,7 @@ class CheckContainersAreUp(WAAction):
             )
 
         if warnings:
-            warning_str = "Message: {}\n"
+            warning_str = "{}\n"
             return results.Warning(
                 cls,
                 "More than one set(coreapp,webapp) of containers are running",

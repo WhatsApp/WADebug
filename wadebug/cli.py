@@ -287,9 +287,9 @@ def execute_actions_interactive(actions):
         res = act.run(config)
         result[res.action.user_facing_name] = res.to_dict()
 
-        ui.print_result(res)
+        ui.print_result_header(res)
         if isinstance(res, results._NotOK):
-            click.echo(res)
+            ui.print_result_details(res)
             problems.append(res)
 
     click.echo()
