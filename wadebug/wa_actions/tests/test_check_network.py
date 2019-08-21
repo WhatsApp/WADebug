@@ -7,10 +7,14 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import unittest
 
-from mock import patch
+from mock import ANY, patch
 from wadebug import results
 from wadebug.wa_actions.implementations import check_network
-from wadebug.wa_actions.implementations.check_network import docker_utils
+from wadebug.wa_actions.implementations.check_network import (
+    WA_SERVER_TYPE,
+    docker_utils,
+    network_utils,
+)
 
 
 class MockContainer:
@@ -28,38 +32,98 @@ class TestCheckNetwork(unittest.TestCase):
     @patch.object(
         docker_utils, "get_running_wacore_containers", return_value=[MockContainer()]
     )
-    @patch.object(check_network, "is_server_in_warning_state", return_value=True)
-    @patch.object(check_network, "is_server_in_error_state", return_value=False)
-    @patch.object(results, "Warning", autospec=True)
-    def test_should_return_warning_if_host_not_reachable_on_default_port(self, *_):
-        check_network.CheckNetworkAction().run(config=None)
-
-        results.Warning.assert_called()
-
-    @patch.object(
-        docker_utils, "get_running_wacore_containers", return_value=[MockContainer()]
-    )
-    @patch.object(check_network, "is_server_in_warning_state", return_value=True)
     @patch.object(
         check_network,
-        "is_server_in_error_state",
-        side_effect=[True, False, False, True, False, True],
+        "get_hosts_not_reachable_from_container",
+        return_value=[
+            ("host1", WA_SERVER_TYPE.WA_SERVER),
+            ("host2", WA_SERVER_TYPE.WA_REPOSITORY),
+        ],
     )
     @patch.object(results, "Problem", autospec=True)
     def test_should_return_problem_if_at_least_one_host_not_reachable_on_https_port(
-        self, *_
+        self, mock_problem, *_
     ):
         check_network.CheckNetworkAction().run(config=None)
-
-        results.Problem.assert_called()
+        mock_problem.assert_called_with(
+            ANY,
+            "Network connectivity check fails",
+            "Cannot reach WhatsApp Server host1 on port 5222 or 443.\n"
+            "Cannot reach WhatsApp Docker Repository host2 on port 5222 or 443.\n",
+            ANY,
+        )
 
     @patch.object(
         docker_utils, "get_running_wacore_containers", return_value=[MockContainer()]
     )
-    @patch.object(check_network, "is_server_in_warning_state", return_value=False)
-    @patch.object(check_network, "is_server_in_error_state", return_value=False)
+    @patch.object(
+        check_network, "get_hosts_not_reachable_from_container", return_value=[]
+    )
     @patch.object(results, "OK", autospec=True)
     def test_should_return_Ok_if_all_hosts_reachable(self, *_):
         check_network.CheckNetworkAction().run(config=None)
 
         results.OK.assert_called()
+
+    @patch.object(
+        check_network,
+        "is_host_reachable_from_container",
+        side_effect=[False, True, False],
+    )
+    def test_should_return_hosts_not_reachable(self, mock_call):
+        mock_hosts = [
+            ("host1", WA_SERVER_TYPE.WA_SERVER, "primary_port", "secondary_port"),
+            ("host2", WA_SERVER_TYPE.WA_SERVER, "primary_port", "secondary_port"),
+            ("host3", WA_SERVER_TYPE.WA_REPOSITORY, "primary_port", "secondary_port"),
+        ]
+        hosts_not_reachable = check_network.get_hosts_not_reachable_from_container(
+            "container", mock_hosts
+        )
+
+        assert mock_call.call_count == len(mock_hosts)
+
+        assert len(hosts_not_reachable) == 2
+        assert ("host1", WA_SERVER_TYPE.WA_SERVER) in hosts_not_reachable
+        assert ("host3", WA_SERVER_TYPE.WA_REPOSITORY) in hosts_not_reachable
+
+    @patch.object(
+        network_utils, "hostname_reachable_from_container", side_effect=[True, ANY]
+    )
+    def test_host_reachable_on_primary_port(self, mock_check):
+        assert (
+            check_network.is_host_reachable_from_container(
+                "container", "host", "primary_port", "secondary_port"
+            )
+            is True
+        )
+
+        # only check primary port if reachable
+        assert mock_check.call_count == 1
+
+    @patch.object(
+        network_utils, "hostname_reachable_from_container", side_effect=[False, True]
+    )
+    def test_host_reachable_on_secondary_port(self, mock_check):
+        assert (
+            check_network.is_host_reachable_from_container(
+                "container", "host", "primary_port", "secondary_port"
+            )
+            is True
+        )
+
+        # check secondary port when not reachable on primary port
+        assert mock_check.call_count == 2
+
+    @patch.object(
+        network_utils, "hostname_reachable_from_container", side_effect=[False, False]
+    )
+    def test_host_not_reachable_on_either_port(self, mock_check):
+        assert (
+            check_network.is_host_reachable_from_container(
+                "container", "host", "primary_port", "secondary_port"
+            )
+            is False
+        )
+
+        # check secondary port when not reachable on primary port
+        assert mock_check.call_count == 2
