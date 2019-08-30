@@ -39,3 +39,12 @@ class MySQLUtil:
             cursor.execute("SELECT version()")
             result = cursor.fetchone()
             return result["version()"]
+
+    def user_has_privileges(self, user, privileges):
+        connection = self.create_connection()
+        with connection:
+            cursor = connection.cursor()
+            sql = "SELECT {} FROM mysql.user WHERE user=%s".format(",".join(privileges))
+            cursor.execute(sql, (user,))
+            result = cursor.fetchone()
+            return result

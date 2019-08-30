@@ -10,12 +10,14 @@ from wadebug.wa_actions.base import WAAction
 from wadebug.wa_actions.mysql_utils import MySQLUtil
 
 
-PRIVILIGES = [
+PRIVILEGES = [
     "Select_priv",
     "Insert_priv",
     "Update_priv",
     "Delete_priv",
     "Create_priv",
+    "Alter_priv",
+    "Index_priv",
     "Drop_priv",
 ]
 SUCCESS = "Y"
@@ -44,11 +46,19 @@ to grant all privileges to the db user `{}` and rerun the checks.
 
         try:
             mysql_utils = MySQLUtil(**db_config)
-            with mysql_utils.create_connection() as cursor:
-                result = get_user_privileges(cursor, ",".join(PRIVILIGES), cur_user)
-                for col in PRIVILIGES:
-                    if result[col] != SUCCESS:
-                        errors.append(col)
+            result = mysql_utils.user_has_privileges(cur_user, PRIVILEGES)
+
+            if not result:
+                return results.Problem(
+                    cls,
+                    "Checking permissions returns empty result",
+                    "User {} doesn't exist".format(cur_user),
+                    "Make sure the correct db user is set in the config file",
+                )
+
+            for col in PRIVILEGES:
+                if result[col] != SUCCESS:
+                    errors.append(col)
         except Exception as e:
             return results.Problem(
                 cls, "Unable to connect to db to check permisions", e, remediation
@@ -58,15 +68,8 @@ to grant all privileges to the db user `{}` and rerun the checks.
             return results.Problem(
                 cls,
                 "Some required db permisions are missing",
-                "Missing Permissions : {}".format(" , ".join(PRIVILIGES)),
+                "Missing Permissions : {}".format(" , ".join(errors)),
                 remediation,
             )
 
         return results.OK(cls)
-
-
-def get_user_privileges(cursor, column_names, user):
-    sql = "SELECT {} FROM mysql.user WHERE user=%s".format(column_names)
-    cursor.execute(sql, (user,))
-    result = cursor.fetchone()
-    return result
