@@ -6,6 +6,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import unittest
+from datetime import datetime
 from os import path
 
 import pytest
@@ -49,6 +50,21 @@ class TestLogUtils(unittest.TestCase):
                     )
                 )
             assert log_filepath == expected_container_logs_filepath
+
+    @patch("wadebug.wa_actions.log_utils.datetime")
+    def test_get_container_logs_start_end_datetime(self, mock_datetime):
+        mock_duration_hours = 2
+        mock_now = datetime(2019, 12, 19, 8, 22, 1)
+        mock_datetime.now.return_value = mock_now
+
+        start_dt, end_dt = log_utils.get_container_logs_start_end_datetime(
+            mock_duration_hours
+        )
+
+        assert start_dt == datetime(
+            2019, 12, 19, mock_now.hour - mock_duration_hours, 22, 1
+        )
+        assert end_dt == mock_now
 
     def test_should_return_filepath_string_if_get_container_inspect_logs_has_no_exceptions(
         self

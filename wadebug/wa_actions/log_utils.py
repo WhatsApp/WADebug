@@ -9,6 +9,7 @@ import errno
 import json
 import os
 import shutil
+from datetime import datetime, timedelta, timezone
 
 import docker
 from wadebug import exceptions
@@ -24,6 +25,10 @@ WEB_LOG_PATH = "/var/log/whatsapp"
 WEB_LOG_FILE = "web.log"
 WEB_ERROR_LOG_PATH = "/var/log/lighttpd"
 WEB_ERROR_LOG_FILE = "error.log"
+
+CONTAINER_LOG_DURATION_HOURS = 3
+# WA container logs use UTC timezone
+CONTAINER_LOG_TIMEZONE = timezone.utc
 
 
 def prepare_logs():
@@ -87,12 +92,28 @@ def get_logs():
 
 def get_container_logs(wa_container):
     container = wa_container.container
-    container_logs = docker_utils.get_container_logs(container)
+    start_dt, end_dt = get_container_logs_start_end_datetime(
+        CONTAINER_LOG_DURATION_HOURS, CONTAINER_LOG_TIMEZONE
+    )
+    container_logs = docker_utils.get_container_logs(
+        container,
+        # converted to epoch time because docker API
+        # doesn't accept timezone-aware datetimes
+        int(start_dt.timestamp()),
+        int(end_dt.timestamp()),
+    )
     log_filename = os.path.join(
         OUTPUT_FOLDER, "{}-container.log".format(container.name)
     )
     docker_utils.write_to_file_in_binary(log_filename, container_logs)
     return log_filename
+
+
+def get_container_logs_start_end_datetime(logs_duration_hours, logs_timezone=None):
+    logs_duration = timedelta(hours=logs_duration_hours)
+    end_dt = datetime.now(logs_timezone)
+
+    return end_dt - logs_duration, end_dt
 
 
 def get_container_inspect_logs(wa_container):

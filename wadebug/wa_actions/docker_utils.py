@@ -23,7 +23,6 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 EXPIRED_DATE_FORMAT = "%Y-%m-%d"
 LIFETIME_OF_BETA_BUILD_IN_DAYS = 45
 LIFETIME_OF_BUILD_IN_DAYS = 180
-MAX_LINE_OF_LOGS = 10000
 TEMP_TAR_FILENAME = "temp.tar"
 
 
@@ -32,8 +31,8 @@ def get_all_containers():
     return client.containers.list(all=True)
 
 
-def get_container_logs(container):
-    return container.logs(tail=MAX_LINE_OF_LOGS)
+def get_container_logs(container, since_datetime=None, until_datetime=None):
+    return container.logs(since=since_datetime, until=until_datetime)
 
 
 def get_inspect_result(container):
