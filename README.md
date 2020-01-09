@@ -24,8 +24,8 @@ To execute one specific action
 
 ## For developers:
 
-This tool uses `tox` to test both Python 2.7 and 3.6. `tox` will create
-virtual environments to run tests for both. Install tox on your system's Python.
+This tool uses `tox` to test in Python 3. `tox` will create
+virtual environments to run tests. Install tox on your system's Python.
 All other dependencies with go into virtualenvs.
 
 1. Install tox on your system using pip `pip install tox`, you may need to run the command in `sudo`
@@ -43,7 +43,7 @@ $ tox
 ```
 Warning: do NOT run `tox` from a virtualenv as it will fail.
 
-`tox` will run tests in Python 2 and 3.
+`tox` will run tests in Python 3 and run flake8 linter.
 
 To run tests in Python 3 for faster feedback, run either `$ pytest` from within the virtualenv or `$ tox -epy3` out of it.
 
