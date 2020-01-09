@@ -31,9 +31,16 @@ CONTAINER_LOG_DURATION_HOURS = 3
 CONTAINER_LOG_TIMEZONE = timezone.utc
 
 
-def prepare_logs():
+def prepare_logs(logs_since, logs_since_format):
     check_access()
-    log_files = get_logs()
+    logs_start_dt, logs_end_dt = get_container_logs_start_end_datetimes(
+        logs_since,
+        logs_since_format,
+        CONTAINER_LOG_TIMEZONE,
+        CONTAINER_LOG_DURATION_HOURS,
+    )
+
+    log_files = get_logs(logs_start_dt, logs_end_dt)
     support_info_file = get_support_info()
     if support_info_file:
         log_files.append(support_info_file)
@@ -59,13 +66,30 @@ def check_access():
             )
 
 
-def get_logs():
+def get_container_logs_start_end_datetimes(
+    start_dt_str, dt_format, dt_timezone, duration_hours
+):
+    logs_duration = timedelta(hours=duration_hours)
+
+    if start_dt_str:
+        start_dt = datetime.strptime(start_dt_str, dt_format).replace(
+            tzinfo=dt_timezone
+        )
+        return start_dt, start_dt + logs_duration
+    else:
+        end_dt = datetime.now(dt_timezone)
+        return end_dt - logs_duration, end_dt
+
+
+def get_logs(logs_start_dt, logs_end_dt):
     wa_containers = docker_utils.get_wa_containers()
     log_files = []
     errors = []
     for wa_container in wa_containers:
         try:
-            container_log_filename = get_container_logs(wa_container)
+            container_log_filename = get_container_logs(
+                wa_container, logs_start_dt, logs_end_dt
+            )
             log_files.append(container_log_filename)
             inspect_log_filename = get_container_inspect_logs(wa_container)
             log_files.append(inspect_log_filename)
@@ -90,30 +114,19 @@ def get_logs():
     return [lf for lf in log_files if lf is not None]
 
 
-def get_container_logs(wa_container):
+def get_container_logs(wa_container, logs_start_dt, logs_end_dt):
     container = wa_container.container
-    start_dt, end_dt = get_container_logs_start_end_datetime(
-        CONTAINER_LOG_DURATION_HOURS, CONTAINER_LOG_TIMEZONE
-    )
     container_logs = docker_utils.get_container_logs(
         container,
-        # converted to epoch time because docker API
-        # doesn't accept timezone-aware datetimes
-        int(start_dt.timestamp()),
-        int(end_dt.timestamp()),
+        # docker python SDK only accepts int
+        int(logs_start_dt.timestamp()),
+        int(logs_end_dt.timestamp()),
     )
     log_filename = os.path.join(
         OUTPUT_FOLDER, "{}-container.log".format(container.name)
     )
     docker_utils.write_to_file_in_binary(log_filename, container_logs)
     return log_filename
-
-
-def get_container_logs_start_end_datetime(logs_duration_hours, logs_timezone=None):
-    logs_duration = timedelta(hours=logs_duration_hours)
-    end_dt = datetime.now(logs_timezone)
-
-    return end_dt - logs_duration, end_dt
 
 
 def get_container_inspect_logs(wa_container):

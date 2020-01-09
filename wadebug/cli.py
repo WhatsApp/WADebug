@@ -12,7 +12,8 @@ import sys
 import click
 import pkg_resources
 from wadebug import cli_utils, exceptions, results, ui, wa_actions
-from wadebug.cli_param import ReusableParam, wadebug_option
+from wadebug.cli_param import wadebug_option
+from wadebug.cli_reusable_params import json_output, logs_since, opt_out, send_logs
 from wadebug.config import Config, ConfigLoadError
 from wadebug.wa_actions import log_utils
 
@@ -21,6 +22,7 @@ from wadebug.wa_actions import log_utils
 # when back-porting Python3 to Python2/3
 # http://python-future.org/imports.html#should-i-import-unicode-literals
 click.disable_unicode_literals_warning = True
+LOGS_SINCE_PARAM_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 __VERSION__ = "unknown"
 
@@ -71,25 +73,6 @@ def run():
         )
 
 
-opt_out = ReusableParam(
-    "--do-not-send-usage",
-    "opt_out",
-    help="Pass this flag to opt out from sending usage to WhatsApp. Sending "
-    "usage to WhatsApp could accelerate Direct Support ticket resolve time.",
-    is_flag=True,
-    default=False,
-)
-
-json_output = ReusableParam(
-    "--json",
-    "json",
-    help="Pass this flag to output results in json format. This enables "
-    "automation and integration with other applications if needed.",
-    is_flag=True,
-    default=False,
-)
-
-
 @click.group(invoke_without_command=True)
 @click.pass_context
 @click.version_option(__VERSION__)
@@ -124,17 +107,14 @@ def ls(ctx, **kwargs):
 
 @main.command()
 @click.pass_context
-@click.option(
-    "--send",
-    "send",
-    help="Opt to send logs to Facebook for help on Direct Support.",
-    is_flag=True,
-    default=False,
-)
+@wadebug_option(send_logs)
+@wadebug_option(logs_since)
 @wadebug_option(opt_out)
 @wadebug_option(json_output)
-def logs(ctx, send, **kwargs):
+def logs(ctx, **kwargs):
     """Saves multiple logfiles on current folder at ./wadebug_logs/"""
+    send = ctx.obj.get("send", False)
+    logs_since = ctx.obj.get("since", "")
     opt_out = ctx.obj.get("opt_out", False)
     json_output = ctx.obj.get("json", False)
     logs_folder = os.path.join(os.getcwd(), log_utils.OUTPUT_FOLDER)
@@ -149,11 +129,11 @@ def logs(ctx, send, **kwargs):
         )
     prepare_logs()
     try:
-        zipped_logs_file_handle, log_files = log_utils.prepare_logs()
+        zipped_logs_file_handle, log_files = log_utils.prepare_logs(
+            logs_since, LOGS_SINCE_PARAM_FORMAT
+        )
         output = handle_outputs(log_files, output, zipped_logs_file_handle.name)
-    except exceptions.LogsNotCompleteError as e:
-        handle_exceptions(e, output)
-    except exceptions.FileAccessError as e:
+    except Exception as e:
         handle_exceptions(e, output)
 
     handle_upload_results(output, zipped_logs_file_handle)
@@ -320,6 +300,7 @@ def get_logs_json_handlers(send, opt_out, logs_folder):
                 "Please use only one of those flags."
             )
             click.echo(json.dumps(output))
+            sys.exit(-1)
 
     def handle_outputs(log_files, output, _zipped_logs_file_name):
         # _zipped_logs_file_name is not used in this function

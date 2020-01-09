@@ -6,7 +6,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import unittest
-from datetime import datetime
+from datetime import datetime, timezone
 from os import path
 
 import pytest
@@ -28,6 +28,38 @@ class TestLogUtils(unittest.TestCase):
 
         assert mocked_makedirs_call.call_count == 1
 
+    @patch("wadebug.wa_actions.log_utils.datetime")
+    def test_get_container_logs_start_end_datetimes_with_no_start_dt(
+        self, mock_datetime
+    ):
+        mock_now = datetime(2019, 12, 19, 8, 22, 1)
+        mock_datetime.now.return_value = mock_now
+        mock_tz = timezone.utc
+        mock_duration_hours = 2
+
+        start_dt, end_dt = log_utils.get_container_logs_start_end_datetimes(
+            "", "date_format", mock_tz, mock_duration_hours
+        )
+
+        assert start_dt == datetime(
+            2019, 12, 19, mock_now.hour - mock_duration_hours, 22, 1
+        )
+        assert end_dt == mock_now
+
+    def test_get_container_logs_start_end_datetimes_with_start_dt_str(self):
+        mock_start_dt_str = "2019-12-19 08:22:01"
+        mock_tz = timezone.utc
+        mock_duration_hours = 4
+
+        start_dt, end_dt = log_utils.get_container_logs_start_end_datetimes(
+            mock_start_dt_str, "%Y-%m-%d %H:%M:%S", mock_tz, mock_duration_hours
+        )
+
+        assert start_dt == datetime(2019, 12, 19, 8, 22, 1, tzinfo=mock_tz)
+        assert end_dt == datetime(
+            2019, 12, 19, 8 + mock_duration_hours, 22, 1, tzinfo=mock_tz
+        )
+
     def test_should_return_filepath_string_if_get_container_logs_has_no_exceptions(
         self
     ):
@@ -42,7 +74,9 @@ class TestLogUtils(unittest.TestCase):
             path, "join", return_value=expected_container_logs_filepath
         ):
             try:
-                log_filepath = log_utils.get_container_logs(mock_container)
+                log_filepath = log_utils.get_container_logs(
+                    mock_container, datetime.now(), datetime.now()
+                )
             except Exception as e:
                 pytest.fail(
                     "Unexpected Exception from log_utils.get_container_logs: \n {}".format(
@@ -50,21 +84,6 @@ class TestLogUtils(unittest.TestCase):
                     )
                 )
             assert log_filepath == expected_container_logs_filepath
-
-    @patch("wadebug.wa_actions.log_utils.datetime")
-    def test_get_container_logs_start_end_datetime(self, mock_datetime):
-        mock_duration_hours = 2
-        mock_now = datetime(2019, 12, 19, 8, 22, 1)
-        mock_datetime.now.return_value = mock_now
-
-        start_dt, end_dt = log_utils.get_container_logs_start_end_datetime(
-            mock_duration_hours
-        )
-
-        assert start_dt == datetime(
-            2019, 12, 19, mock_now.hour - mock_duration_hours, 22, 1
-        )
-        assert end_dt == mock_now
 
     def test_should_return_filepath_string_if_get_container_inspect_logs_has_no_exceptions(
         self
@@ -200,7 +219,7 @@ class TestLogUtils(unittest.TestCase):
             "/webcontainer/errors",
         ]
         try:
-            results = log_utils.get_logs()
+            results = log_utils.get_logs(datetime.now(), datetime.now())
         except exceptions.LogsNotCompleteError:
             pytest.fail("Access error:  Cannot write logs to current directory")
         assert results == expected_logs_files
