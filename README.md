@@ -11,11 +11,41 @@ support.
 
 # Usage
 
-To execute all actions:
-    `$ wadebug`
+To retrieve and save logs under wadebug_logs/ in the current directory:
+```
+$ wadebug logs
+```
 
-To execute one specific action
-    `$ wadebug partial check_network`
+To retrieve logs and send them to Facebook for troubleshooting:
+```
+$ wadebug logs --send
+```
+
+[New since v0.1.5]
+To retrieve logs starting from a particular date time (GMT timezone), e.g.:
+```
+$ wadebug logs --since='2020-01-07 3:00:02'
+```
+
+To execute all checks:
+```
+$ wadebug
+```
+
+To list all available options:
+```
+$ wadebug ls
+```
+
+To execute one specific check:
+```
+$ wadebug partial check_mysql_version check_network
+```
+
+JSON mode:
+```
+$ wadebug --json
+```
 
 # Installation
 

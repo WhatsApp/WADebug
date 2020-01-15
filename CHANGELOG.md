@@ -1,3 +1,9 @@
+### 0.1.5 (January 15, 2020)
+* Deprecate python 2 support 🎉
+* `wadebug logs` now gets past 3 hours logs, instead of last 10K lines of logs
+* Add `--since` option to `wadebug logs` that retrieves 3 hours of logs starting from the date time value specified
+* [Bug Fix] Fail fast in json mode when incompatible params are used
+
 ### 0.1.4 (September 3, 2019)
 
 * A new and cleaner UI for WADebug
