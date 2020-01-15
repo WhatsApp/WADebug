@@ -11,7 +11,7 @@ import sys
 
 import click
 import pkg_resources
-from wadebug import cli_utils, exceptions, results, ui, wa_actions
+from wadebug import cli_utils, results, ui, wa_actions
 from wadebug.cli_param import wadebug_option
 from wadebug.cli_reusable_params import json_output, logs_since, opt_out, send_logs
 from wadebug.config import Config, ConfigLoadError
