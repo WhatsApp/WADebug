@@ -23,11 +23,11 @@ class MockContainer:
 
 class TestCheckNetwork(unittest.TestCase):
     @patch.object(docker_utils, "get_running_wacore_containers", return_value=[])
-    @patch.object(results, "Problem", autospec=True)
-    def test_should_return_problem_if_no_coreapp_running(self, *_):
+    @patch.object(results, "Skipped", autospec=True)
+    def test_should_skip_if_no_coreapp_running(self, *_):
         check_network.CheckNetworkAction().run(config=None)
 
-        results.Problem.assert_called()
+        results.Skipped.assert_called()
 
     @patch.object(
         docker_utils, "get_running_wacore_containers", return_value=[MockContainer()]

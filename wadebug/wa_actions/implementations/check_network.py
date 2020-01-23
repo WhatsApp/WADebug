@@ -37,21 +37,21 @@ class CheckNetworkAction(WAAction):
     user_facing_name = "check_network"
     short_description = (
         "Test if required hosts can be reached on specific port "
-        "from coreapp container."
+        "from the first running coreapp container."
     )
 
     @classmethod
     def _run(cls, config, *args, **kwargs):
         wacore_containers = docker_utils.get_running_wacore_containers()
 
-        short_error_message = "Network connectivity check fails"
-
         if not wacore_containers:
-            return results.Problem(
+            return results.Skipped(
                 cls,
-                short_error_message,
-                "There is no wacore container running",
-                "Please check results from other actions to diagnose",
+                "Network connectivity check was skipped",
+                "There is no wacore container running. Action skipped.",
+                "If this is unexpected, check results from other actions to diagnose. "
+                "If this is expected (e.g.: an HA/MC setup "
+                "across multiple hosts is under test), no actions are required.",
             )
 
         container = wacore_containers[0]
