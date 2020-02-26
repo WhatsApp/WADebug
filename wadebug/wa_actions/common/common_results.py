@@ -22,9 +22,9 @@ def missing_config(cls, missing_configs):
 def wadebug_error(cls, exception, trace):
     return results.WADebugError(
         cls,
-        "An unexpected error occurred on this check",
+        "An unexpected error occurred with WADebug",
         exception,
-        "Please report this via Direct Support "
-        "(https://business.facebook.com/direct-support)",
+        "Please report this by opening a new issue on Github at "
+        "(https://github.com/WhatsApp/WADebug/issues)",
         traceback=trace,
     )
