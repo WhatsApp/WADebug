@@ -13,6 +13,7 @@ from enum import Enum
 
 import docker
 from six import BytesIO
+from wadebug.wa_actions.models.wa_container import WAContainer
 
 
 WA_WEBAPP_CONTAINER_TAG = "whatsapp.biz/web"
@@ -119,43 +120,37 @@ def get_wa_version_from_container(container):
 
 
 def get_running_wacore_containers():
-    return get_running_wa_containers_by_type(WA_COREAPP_CONTAINER_TAG)
+    return [c.container for c in get_running_wa_containers() if c.is_coreapp()]
 
 
 def get_running_waweb_containers():
-    return get_running_wa_containers_by_type(WA_WEBAPP_CONTAINER_TAG)
-
-
-def get_running_wa_containers_by_type(type_to_match):
-    return [
-        c.container
-        for c in get_running_wa_containers()
-        if c.container_type == type_to_match
-    ]
+    return [c.container for c in get_running_wa_containers() if c.is_webapp()]
 
 
 def get_running_wa_containers():
-    return [c for c in get_wa_containers() if is_container_running(c.container)]
+    return [c for c in get_wa_containers() if c.is_running()]
 
 
 def get_wa_containers():
     """Return all probably relevant containers, including MySQL, if exists."""
-    return [
-        WAContainer(c, get_wa_container_type(c))
-        for c in get_all_containers()
-        if get_wa_container_type(c)
-    ]
+    return [WAContainer(c) for c in get_all_containers() if is_wa_container(c)]
 
 
-def get_wa_container_type(container):
-    for repo_tag in container.image.attrs["RepoTags"]:
-        if repo_tag.find(WA_WEBAPP_CONTAINER_TAG) > -1:
-            return WA_WEBAPP_CONTAINER_TAG
-        if repo_tag.find(WA_COREAPP_CONTAINER_TAG) > -1:
-            return WA_COREAPP_CONTAINER_TAG
-        if repo_tag.find(MYSQL_CONTAINER_TAG) > -1:
-            return MYSQL_CONTAINER_TAG
-    return None
+def is_wa_container(container):
+    return (
+        len(
+            [
+                repo_tag
+                for repo_tag in container.image.attrs["RepoTags"]
+                if (
+                    repo_tag.find(WA_WEBAPP_CONTAINER_TAG) > -1
+                    or repo_tag.find(WA_COREAPP_CONTAINER_TAG) > -1
+                    or repo_tag.find(MYSQL_CONTAINER_TAG) > -1
+                )
+            ]
+        )
+        > 0
+    )
 
 
 def is_container_running(container):
@@ -163,11 +158,7 @@ def is_container_running(container):
 
 
 def get_all_running_wa_containers_except_db():
-    return [
-        c.container
-        for c in get_running_wa_containers()
-        if c.container_type != MYSQL_CONTAINER_TAG
-    ]
+    return [c.container for c in get_running_wa_containers() if not c.is_db()]
 
 
 def get_mysql_password(wa_container):
@@ -263,13 +254,3 @@ class DockerDiffFileChange(Enum):
     CREATED = 0
     MODIFIED = 1
     DELETED = 2
-
-
-class WAContainer:
-    def __init__(self, container, container_type):
-        self.container = container
-        self.container_type = container_type
-
-    @property
-    def status(self):
-        return self.container.status

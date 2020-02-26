@@ -27,18 +27,14 @@ class CheckContainersAreUp(WAAction):
             versions_to_wa_containers_dict = defaultdict(lambda: defaultdict(list))
             for wa_container in containers:
                 container = wa_container.container
-                container_type = wa_container.container_type
-                if docker_utils.is_container_running(container):
-                    if (
-                        docker_utils.WA_WEBAPP_CONTAINER_TAG == container_type
-                        or docker_utils.WA_COREAPP_CONTAINER_TAG == container_type
-                    ):
+                if wa_container.is_running():
+                    if wa_container.is_webapp() or wa_container.is_coreapp():
                         version = docker_utils.get_wa_version_from_container(container)
                         versions_to_wa_containers_dict[version[1]][
-                            container_type
+                            wa_container.get_container_type()
                         ].append(container)
                 else:
-                    if docker_utils.MYSQL_CONTAINER_TAG == container_type:
+                    if wa_container.is_db():
                         stopped_sql_containers.append(container)
                     else:
                         stopped_containers.append(container)

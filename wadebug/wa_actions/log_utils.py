@@ -143,9 +143,8 @@ def get_container_inspect_logs(wa_container):
 
 def get_corecontainer_coredumps_logs(wa_container):
     container = wa_container.container
-    container_type = wa_container.container_type
     core_dump_filename = None
-    if docker_utils.WA_COREAPP_CONTAINER_TAG == container_type:
+    if wa_container.is_coreapp():
         core_dump_filename = os.path.join(
             OUTPUT_FOLDER, "{}-coredump.log".format(container.name)
         )
@@ -156,10 +155,9 @@ def get_corecontainer_coredumps_logs(wa_container):
 
 def get_webcontainer_logs(wa_container):
     container = wa_container.container
-    container_type = wa_container.container_type
     webapp_log_filename = None
     webapp_error_log_filename = None
-    if docker_utils.WA_WEBAPP_CONTAINER_TAG == container_type:
+    if wa_container.is_webapp():
         webapp_log_filename = copy_additional_logs_for_webcontainer(
             container, WEB_LOG_PATH, WEB_LOG_FILE
         )

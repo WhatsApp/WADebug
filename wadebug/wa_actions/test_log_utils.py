@@ -13,11 +13,10 @@ import pytest
 from mock import patch
 from wadebug import exceptions
 from wadebug.wa_actions import docker_utils, log_utils
-
-
-class MockContainer:
-    def __init__(self):
-        self.name = "MockContainer"
+from wadebug.wa_actions.tests.stubs.mock_wa_container import (
+    MockWACoreappContainer,
+    MockWAWebContainer,
+)
 
 
 class TestLogUtils(unittest.TestCase):
@@ -63,7 +62,7 @@ class TestLogUtils(unittest.TestCase):
     def test_should_return_filepath_string_if_get_container_logs_has_no_exceptions(
         self
     ):
-        mock_container = docker_utils.WAContainer(MockContainer(), "container_type")
+        mock_container = MockWACoreappContainer()
         expected_container_logs_filepath = "filepath"
 
         with patch.object(
@@ -88,7 +87,7 @@ class TestLogUtils(unittest.TestCase):
     def test_should_return_filepath_string_if_get_container_inspect_logs_has_no_exceptions(
         self
     ):
-        mock_container = docker_utils.WAContainer(MockContainer(), "container_type")
+        mock_container = MockWAWebContainer()
         mock_inspect_result = {"result": "this is a mock result"}
         expected_inspect_log_filepath = "filepath"
 
@@ -111,9 +110,7 @@ class TestLogUtils(unittest.TestCase):
     def test_should_return_filepath_string_if_get_corecontainer_coredumps_logs_has_no_exceptions(
         self
     ):
-        mock_container = docker_utils.WAContainer(
-            MockContainer(), docker_utils.WA_COREAPP_CONTAINER_TAG
-        )
+        mock_container = MockWACoreappContainer()
         expected_coredump_log_filepath = "file_path"
 
         with patch.object(
@@ -135,9 +132,7 @@ class TestLogUtils(unittest.TestCase):
     def test_should_return_none_if_get_corecontainer_coredumps_logs_on_not_core_container(
         self,
     ):
-        mocker_container = docker_utils.WAContainer(
-            MockContainer(), "not core container type"
-        )
+        mocker_container = MockWAWebContainer()
         try:
             result = log_utils.get_corecontainer_coredumps_logs(mocker_container)
         # there should be no exception, since get_corecontainer_coredumps
@@ -152,9 +147,7 @@ class TestLogUtils(unittest.TestCase):
     def test_should_return_filepath_string_if_get_webcontainer_logs_has_no_exceptions(
         self
     ):
-        mock_container = docker_utils.WAContainer(
-            MockContainer(), docker_utils.WA_WEBAPP_CONTAINER_TAG
-        )
+        mock_container = MockWAWebContainer()
         expected_log_filepath = "/logs"
 
         with patch.object(
@@ -178,9 +171,7 @@ class TestLogUtils(unittest.TestCase):
             )
 
     def test_should_return_none_if_get_webcontainer_logs_on_not_web_container(self):
-        mocker_container = docker_utils.WAContainer(
-            MockContainer(), "not web container type"
-        )
+        mocker_container = MockWACoreappContainer()
         try:
             log_result, error_result = log_utils.get_webcontainer_logs(mocker_container)
         # there should be no exception, since get_webcontainer_logs
@@ -194,9 +185,7 @@ class TestLogUtils(unittest.TestCase):
         assert log_result is None and error_result is None
 
     @patch.object(
-        docker_utils,
-        "get_wa_containers",
-        return_value=[docker_utils.WAContainer(MockContainer(), "container_type")],
+        docker_utils, "get_wa_containers", return_value=[MockWAWebContainer()]
     )
     @patch.object(log_utils, "get_container_logs", return_value="/container/logs")
     @patch.object(log_utils, "get_container_inspect_logs", return_value="/inspect/logs")
@@ -229,7 +218,7 @@ class TestLogUtils(unittest.TestCase):
     def test_should_write_webcontainer_log_to_file(
         self, mocked_write_call, mock_get_archive_from_container
     ):
-        mock_container = MockContainer()
+        mock_container = MockWAWebContainer()
 
         log_utils.copy_additional_logs_for_webcontainer(
             mock_container, "mock path", "mock file name"
