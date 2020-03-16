@@ -3,7 +3,6 @@
 
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 from mock import Mock
 from wadebug.wa_actions.models.wa_container import (
@@ -25,6 +24,8 @@ class MockDockerContainer:
         self.status = status
 
     def __getattr__(self, attr):
+        if attr in ["short_id"]:
+            return ""
         return Mock()
 
 
