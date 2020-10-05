@@ -60,7 +60,7 @@ class TestLogUtils(unittest.TestCase):
         )
 
     def test_should_return_filepath_string_if_get_container_logs_has_no_exceptions(
-        self
+        self,
     ):
         mock_container = MockWACoreappContainer()
         expected_container_logs_filepath = "filepath"
@@ -85,7 +85,7 @@ class TestLogUtils(unittest.TestCase):
             assert log_filepath == expected_container_logs_filepath
 
     def test_should_return_filepath_string_if_get_container_inspect_logs_has_no_exceptions(
-        self
+        self,
     ):
         mock_container = MockWAWebContainer()
         mock_inspect_result = {"result": "this is a mock result"}
@@ -108,7 +108,7 @@ class TestLogUtils(unittest.TestCase):
             assert inspect_log_filepath == expected_inspect_log_filepath
 
     def test_should_return_filepath_string_if_get_corecontainer_coredumps_logs_has_no_exceptions(
-        self
+        self,
     ):
         mock_container = MockWACoreappContainer()
         expected_coredump_log_filepath = "file_path"
@@ -145,7 +145,7 @@ class TestLogUtils(unittest.TestCase):
         assert result is None
 
     def test_should_return_filepath_string_if_get_webcontainer_logs_has_no_exceptions(
-        self
+        self,
     ):
         mock_container = MockWAWebContainer()
         expected_log_filepath = "/logs"
@@ -156,9 +156,10 @@ class TestLogUtils(unittest.TestCase):
             return_value=expected_log_filepath,
         ):
             try:
-                webapp_log_filepath, webapp_error_log_filepath = log_utils.get_webcontainer_logs(
-                    mock_container
-                )
+                (
+                    webapp_log_filepath,
+                    webapp_error_log_filepath,
+                ) = log_utils.get_webcontainer_logs(mock_container)
             except Exception as e:
                 pytest.fail(
                     "Unexpected Exception from log_utils.get_webcontainer_logs:\n{}".format(

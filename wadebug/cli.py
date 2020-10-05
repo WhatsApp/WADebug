@@ -120,13 +120,19 @@ def logs(ctx, **kwargs):
     logs_folder = os.path.join(os.getcwd(), log_utils.OUTPUT_FOLDER)
     output = {"success": False}
     if json_output:
-        prepare_logs, handle_outputs, handle_exceptions, handle_upload_results = get_logs_json_handlers(
-            send, opt_out, logs_folder
-        )
+        (
+            prepare_logs,
+            handle_outputs,
+            handle_exceptions,
+            handle_upload_results,
+        ) = get_logs_json_handlers(send, opt_out, logs_folder)
     else:
-        prepare_logs, handle_outputs, handle_exceptions, handle_upload_results = get_logs_interactive_handlers(
-            send, opt_out, logs_folder
-        )
+        (
+            prepare_logs,
+            handle_outputs,
+            handle_exceptions,
+            handle_upload_results,
+        ) = get_logs_interactive_handlers(send, opt_out, logs_folder)
     prepare_logs()
     try:
         zipped_logs_file_handle, log_files = log_utils.prepare_logs(
