@@ -9,12 +9,13 @@ import pymysql.cursors
 
 
 class MySQLUtil:
-    def __init__(self, host="", port=0, user="", password=""):
+    def __init__(self, host="", port=0, user="", password="", name=""):
         if host and port and user and password:
             self.db_host = host
             self.db_port = int(port)
             self.db_user = user
             self.db_password = password
+            self.db_name = name
         else:
             raise ValueError("Wrong input parameters")
 
@@ -24,6 +25,7 @@ class MySQLUtil:
             port=self.db_port,
             user=self.db_user,
             password=self.db_password,
+            database = self.db_name,
             cursorclass=pymysql.cursors.DictCursor,
         )
         return connection
