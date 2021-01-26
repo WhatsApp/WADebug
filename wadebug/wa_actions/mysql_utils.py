@@ -10,7 +10,7 @@ import pymysql.cursors
 
 class MySQLUtil:
     def __init__(self, host="", port=0, user="", password="", name=""):
-        if host and port and user and password:
+        if host and port and user and password and name:
             self.db_host = host
             self.db_port = int(port)
             self.db_user = user
