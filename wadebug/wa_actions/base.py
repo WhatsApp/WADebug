@@ -39,7 +39,7 @@ def register_class(target_class):
 
 
 class MetaRegistry(type):
-    """Metaclass to store WAActions when instantiating. """
+    """Metaclass to store WAActions when instantiating."""
 
     def __new__(metacls, name, bases, class_dict):
         cls = type.__new__(metacls, name, bases, class_dict)
