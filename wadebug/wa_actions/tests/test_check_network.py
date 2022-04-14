@@ -11,9 +11,9 @@ from mock import ANY, patch
 from wadebug import results
 from wadebug.wa_actions.implementations import check_network
 from wadebug.wa_actions.implementations.check_network import (
-    WA_SERVER_TYPE,
     docker_utils,
     network_utils,
+    WA_SERVER_TYPE,
 )
 
 
