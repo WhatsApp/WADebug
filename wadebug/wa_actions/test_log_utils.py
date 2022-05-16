@@ -8,9 +8,9 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import unittest
 from datetime import datetime, timezone
 from os import path
+from unittest.mock import patch
 
 import pytest
-from mock import patch
 from wadebug import exceptions
 from wadebug.wa_actions import docker_utils, log_utils
 from wadebug.wa_actions.tests.stubs.mock_wa_container import (

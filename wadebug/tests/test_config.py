@@ -7,7 +7,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import unittest
 
-from mock import patch
+from unittest.mock import patch
+
 from wadebug.config import Config, ConfigLoadError
 from yaml.parser import ParserError
 

@@ -7,7 +7,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import unittest
 
-from mock import ANY, patch
+from unittest.mock import ANY, patch
+
 from wadebug import results
 from wadebug.wa_actions.implementations import check_mysql_permissions
 from wadebug.wa_actions.mysql_utils import MySQLUtil

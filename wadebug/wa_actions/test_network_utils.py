@@ -7,7 +7,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import unittest
 
-from mock import patch
+from unittest.mock import patch
+
 from wadebug.wa_actions.network_utils import hostname_reachable_from_container
 
 

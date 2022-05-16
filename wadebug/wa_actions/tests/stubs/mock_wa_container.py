@@ -4,7 +4,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from mock import Mock
+from unittest.mock import Mock
+
 from wadebug.wa_actions.models.wa_container import (
     WA_COREAPP_CONTAINER_TAG,
     WA_WEB_CONTAINER_TAG,

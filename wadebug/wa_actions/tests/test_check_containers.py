@@ -6,7 +6,8 @@
 
 import unittest
 
-from mock import patch
+from unittest.mock import patch
+
 from wadebug import results
 from wadebug.wa_actions import docker_utils
 from wadebug.wa_actions.implementations import check_containers

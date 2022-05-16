@@ -7,7 +7,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import unittest
 
-from mock import call, patch
+from unittest.mock import call, patch
+
 from wadebug import results, ui
 
 

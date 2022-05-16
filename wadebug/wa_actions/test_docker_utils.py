@@ -7,7 +7,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import unittest
 
-from mock import patch
+from unittest.mock import patch
+
 from wadebug.wa_actions import docker_utils
 from wadebug.wa_actions.tests.stubs.mock_wa_container import (
     MockDockerContainer,
